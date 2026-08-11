@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' And '$(TargetFrameworkVersion)' == 'v4.8'">
+    <TargetFrameworkRootPath>$(MSBuildThisFileDirectory).packages\microsoft.netframework.referenceassemblies.net48\1.0.3\build\</TargetFrameworkRootPath>
+    <TargetFrameworkDirectory>$(TargetFrameworkRootPath).NETFramework\v4.8\</TargetFrameworkDirectory>
+    <_TargetFrameworkDirectories>$(TargetFrameworkDirectory)</_TargetFrameworkDirectories>
+    <_FullFrameworkReferenceAssemblyPaths>$(TargetFrameworkDirectory)</_FullFrameworkReferenceAssemblyPaths>
+    <FrameworkPathOverride>$(TargetFrameworkDirectory)</FrameworkPathOverride>
+    <BypassFrameworkInstallChecks>true</BypassFrameworkInstallChecks>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata"><xsd:complexType><xsd:sequence><xsd:element name="value" type="xsd:string" minOccurs="0" /></xsd:sequence><xsd:attribute name="name" use="required" type="xsd:string" /><xsd:attribute name="type" type="xsd:string" /><xsd:attribute name="mimetype" type="xsd:string" /><xsd:attribute ref="xml:space" /></xsd:complexType></xsd:element>
+          <xsd:element name="assembly"><xsd:complexType><xsd:attribute name="alias" type="xsd:string" /><xsd:attribute name="name" type="xsd:string" /></xsd:complexType></xsd:element>
+          <xsd:element name="data"><xsd:complexType><xsd:sequence><xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" /><xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" /></xsd:sequence><xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" /><xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" /><xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" /><xsd:attribute ref="xml:space" /></xsd:complexType></xsd:element>
+          <xsd:element name="resheader"><xsd:complexType><xsd:sequence><xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" /></xsd:sequence><xsd:attribute name="name" type="xsd:string" use="required" /></xsd:complexType></xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="ProductName" xml:space="preserve"><value>Indiana Expedition</value></data>
+  <data name="MenuFile" xml:space="preserve"><value>파일(&amp;F)</value></data>
+  <data name="MenuEdit" xml:space="preserve"><value>편집(&amp;E)</value></data>
+  <data name="MenuView" xml:space="preserve"><value>보기(&amp;V)</value></data>
+  <data name="MenuFavorites" xml:space="preserve"><value>즐겨찾기(&amp;A)</value></data>
+  <data name="MenuTools" xml:space="preserve"><value>도구(&amp;T)</value></data>
+  <data name="MenuHelp" xml:space="preserve"><value>도움말(&amp;H)</value></data>
+  <data name="NewWindow" xml:space="preserve"><value>새 창(&amp;N)</value></data>
+  <data name="Open" xml:space="preserve"><value>열기(&amp;O)...</value></data>
+  <data name="Close" xml:space="preserve"><value>닫기(&amp;C)</value></data>
+  <data name="SaveAs" xml:space="preserve"><value>다른 이름으로 저장(&amp;A)...</value></data>
+  <data name="PageSetup" xml:space="preserve"><value>페이지 설정(&amp;U)...</value></data>
+  <data name="Print" xml:space="preserve"><value>인쇄(&amp;P)...</value></data>
+  <data name="ImportExport" xml:space="preserve"><value>가져오기 및 내보내기(&amp;I)...</value></data>
+  <data name="Properties" xml:space="preserve"><value>속성(&amp;R)</value></data>
+  <data name="WorkOffline" xml:space="preserve"><value>오프라인으로 작업(&amp;W)</value></data>
+  <data name="Cut" xml:space="preserve"><value>잘라내기(&amp;T)</value></data>
+  <data name="Copy" xml:space="preserve"><value>복사(&amp;C)</value></data>
+  <data name="Paste" xml:space="preserve"><value>붙여넣기(&amp;P)</value></data>
+  <data name="SelectAll" xml:space="preserve"><value>모두 선택(&amp;A)</value></data>
+  <data name="Find" xml:space="preserve"><value>이 페이지에서 찾기(&amp;F)...</value></data>
+  <data name="Toolbars" xml:space="preserve"><value>도구 모음(&amp;T)</value></data>
+  <data name="StandardButtons" xml:space="preserve"><value>표준 단추(&amp;S)</value></data>
+  <data name="AddressBar" xml:space="preserve"><value>주소 표시줄(&amp;A)</value></data>
+  <data name="LinksBar" xml:space="preserve"><value>연결(&amp;L)</value></data>
+  <data name="StatusBar" xml:space="preserve"><value>상태 표시줄(&amp;B)</value></data>
+  <data name="ExplorerBar" xml:space="preserve"><value>탐색 창(&amp;E)</value></data>
+  <data name="GoTo" xml:space="preserve"><value>이동(&amp;G)</value></data>
+  <data name="Back" xml:space="preserve"><value>뒤로(&amp;B)</value></data>
+  <data name="Forward" xml:space="preserve"><value>앞으로(&amp;F)</value></data>
+  <data name="Stop" xml:space="preserve"><value>중지(&amp;S)</value></data>
+  <data name="Refresh" xml:space="preserve"><value>새로 고침(&amp;R)</value></data>
+  <data name="Home" xml:space="preserve"><value>홈(&amp;H)</value></data>
+  <data name="TextSize" xml:space="preserve"><value>텍스트 크기(&amp;X)</value></data>
+  <data name="Encoding" xml:space="preserve"><value>인코딩(&amp;D)</value></data>
+  <data name="Source" xml:space="preserve"><value>소스(&amp;C)</value></data>
+  <data name="FullScreen" xml:space="preserve"><value>전체 화면(&amp;F)</value></data>
+  <data name="AddFavorite" xml:space="preserve"><value>즐겨찾기에 추가(&amp;A)...</value></data>
+  <data name="OrganizeFavorites" xml:space="preserve"><value>즐겨찾기 구성(&amp;O)...</value></data>
+  <data name="DeleteHistory" xml:space="preserve"><value>검색 기록 삭제(&amp;D)...</value></data>
+  <data name="PopupBlocker" xml:space="preserve"><value>팝업 차단(&amp;P)</value></data>
+  <data name="ManageAddons" xml:space="preserve"><value>추가 기능 관리(&amp;M)...</value></data>
+  <data name="WindowsUpdate" xml:space="preserve"><value>Windows Update(&amp;U)</value></data>
+  <data name="InternetOptions" xml:space="preserve"><value>인터넷 옵션(&amp;O)...</value></data>
+  <data name="Contents" xml:space="preserve"><value>목차 및 색인(&amp;C)</value></data>
+  <data name="OnlineSupport" xml:space="preserve"><value>온라인 지원(&amp;O)</value></data>
+  <data name="About" xml:space="preserve"><value>Indiana Expedition 정보(&amp;A)</value></data>
+  <data name="ToolbarBack" xml:space="preserve"><value>뒤로</value></data>
+  <data name="ToolbarForward" xml:space="preserve"><value>앞으로</value></data>
+  <data name="ToolbarStop" xml:space="preserve"><value>중지</value></data>
+  <data name="ToolbarRefresh" xml:space="preserve"><value>새로 고침</value></data>
+  <data name="ToolbarHome" xml:space="preserve"><value>홈</value></data>
+  <data name="ToolbarFavorites" xml:space="preserve"><value>즐겨찾기</value></data>
+  <data name="ToolbarHistory" xml:space="preserve"><value>기록</value></data>
+  <data name="AddressLabel" xml:space="preserve"><value>주소(D)</value></data>
+  <data name="Go" xml:space="preserve"><value>이동</value></data>
+  <data name="Links" xml:space="preserve"><value>연결</value></data>
+  <data name="Ready" xml:space="preserve"><value>완료</value></data>
+  <data name="InternetZone" xml:space="preserve"><value>인터넷</value></data>
+  <data name="FavoritesTitle" xml:space="preserve"><value>즐겨찾기</value></data>
+  <data name="HistoryTitle" xml:space="preserve"><value>열어본 페이지 목록</value></data>
+  <data name="Loading" xml:space="preserve"><value>페이지를 여는 중...</value></data>
+  <data name="RuntimeMissingTitle" xml:space="preserve"><value>WebView2 Runtime 필요</value></data>
+  <data name="RuntimeMissingMessage" xml:space="preserve"><value>Indiana Expedition를 실행하려면 Microsoft Edge WebView2 Runtime이 필요합니다.</value></data>
+  <data name="RuntimeDownload" xml:space="preserve"><value>WebView2 Runtime 다운로드</value></data>
+  <data name="Ok" xml:space="preserve"><value>확인</value></data>
+  <data name="Cancel" xml:space="preserve"><value>취소</value></data>
+  <data name="Apply" xml:space="preserve"><value>적용</value></data>
+  <data name="CloseButton" xml:space="preserve"><value>닫기</value></data>
+  <data name="Browse" xml:space="preserve"><value>찾아보기...</value></data>
+  <data name="BrowseMnemonic" xml:space="preserve"><value>찾아보기(&amp;B)...</value></data>
+  <data name="MinimizeWindow" xml:space="preserve"><value>최소화</value></data>
+  <data name="MaximizeWindow" xml:space="preserve"><value>최대화</value></data>
+  <data name="RestoreWindow" xml:space="preserve"><value>이전 크기로</value></data>
+  <data name="CloseWindow" xml:space="preserve"><value>닫기</value></data>
+  <data name="LinkGoogle" xml:space="preserve"><value>Google</value></data>
+  <data name="LinkWebView2" xml:space="preserve"><value>Microsoft WebView2</value></data>
+  <data name="ExternalProtocolPromptFormat" xml:space="preserve"><value>이 링크를 다른 프로그램에서 여시겠습니까?&#xA;&#xA;{0}</value></data>
+  <data name="NoPageToFavorite" xml:space="preserve"><value>즐겨찾기에 추가할 페이지가 없습니다.</value></data>
+  <data name="ClearHistoryConfirm" xml:space="preserve"><value>저장된 방문 기록을 모두 삭제하시겠습니까?</value></data>
+  <data name="ClearHistoryStatus" xml:space="preserve"><value>방문 기록을 삭제했습니다.</value></data>
+  <data name="HistoryToday" xml:space="preserve"><value>오늘</value></data>
+  <data name="HistoryYesterday" xml:space="preserve"><value>어제</value></data>
+  <data name="HistoryEntryFormat" xml:space="preserve"><value>{0}  ({1})</value></data>
+  <data name="Empty" xml:space="preserve"><value>(비어 있음)</value></data>
+  <data name="PageLoadFailedFormat" xml:space="preserve"><value>페이지를 표시할 수 없습니다: {0}</value></data>
+  <data name="DownloadInProgressFormat" xml:space="preserve"><value>다운로드 중: {0}</value></data>
+  <data name="DownloadCompletedFormat" xml:space="preserve"><value>다운로드 완료: {0}</value></data>
+  <data name="DownloadFailedFormat" xml:space="preserve"><value>다운로드 실패: {0}</value></data>
+  <data name="RecoveringBrowser" xml:space="preserve"><value>브라우저 프로세스를 복구하는 중...</value></data>
+  <data name="PermissionRequestFormat" xml:space="preserve"><value>이 웹 사이트가 다음 권한을 요청합니다.&#xA;&#xA;{0}&#xA;{1}&#xA;&#xA;허용하시겠습니까?</value></data>
+  <data name="ContextBack" xml:space="preserve"><value>뒤로</value></data>
+  <data name="ContextForward" xml:space="preserve"><value>앞으로</value></data>
+  <data name="ContextRefresh" xml:space="preserve"><value>새로 고침</value></data>
+  <data name="ContextOpenLinkNewWindow" xml:space="preserve"><value>새 창에서 링크 열기</value></data>
+  <data name="ContextCopyShortcut" xml:space="preserve"><value>바로 가기 복사</value></data>
+  <data name="ContextCopy" xml:space="preserve"><value>복사</value></data>
+  <data name="ContextSelectAll" xml:space="preserve"><value>모두 선택</value></data>
+  <data name="ContextProperties" xml:space="preserve"><value>속성</value></data>
+  <data name="BrowserStartFailed" xml:space="preserve"><value>브라우저를 시작할 수 없습니다.</value></data>
+  <data name="Retry" xml:space="preserve"><value>다시 시도</value></data>
+  <data name="ProtectedZoneFormat" xml:space="preserve"><value>{0}  |  보호됨</value></data>
+  <data name="OpenLocationTitle" xml:space="preserve"><value>열기</value></data>
+  <data name="OpenLocationPrompt" xml:space="preserve"><value>열려는 인터넷 주소나 로컬 HTML 파일을 입력하십시오.</value></data>
+  <data name="WebPageFileFilter" xml:space="preserve"><value>웹 페이지 (*.htm;*.html)|*.htm;*.html|모든 파일 (*.*)|*.*</value></data>
+  <data name="OpenWebPageTitle" xml:space="preserve"><value>웹 페이지 열기</value></data>
+  <data name="AddFavoriteTitle" xml:space="preserve"><value>즐겨찾기에 추가</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>이름(&amp;N):</value></data>
+  <data name="CreateInLabel" xml:space="preserve"><value>만들 위치(&amp;C):</value></data>
+  <data name="AddButton" xml:space="preserve"><value>추가</value></data>
+  <data name="FavoriteRoot" xml:space="preserve"><value>즐겨찾기</value></data>
+  <data name="MoveToFolderTitle" xml:space="preserve"><value>폴더로 이동</value></data>
+  <data name="DestinationFolderLabel" xml:space="preserve"><value>대상 폴더(&amp;F):</value></data>
+  <data name="OrganizeFavoritesTitle" xml:space="preserve"><value>즐겨찾기 구성</value></data>
+  <data name="NewFolderButton" xml:space="preserve"><value>새 폴더(&amp;N)</value></data>
+  <data name="RenameButton" xml:space="preserve"><value>이름 바꾸기(&amp;R)</value></data>
+  <data name="MoveToFolderButton" xml:space="preserve"><value>폴더로 이동(&amp;M)...</value></data>
+  <data name="DeleteButton" xml:space="preserve"><value>삭제(&amp;D)</value></data>
+  <data name="NewFolderTitle" xml:space="preserve"><value>새 폴더</value></data>
+  <data name="FolderNamePrompt" xml:space="preserve"><value>폴더 이름:</value></data>
+  <data name="NewFolderDefaultName" xml:space="preserve"><value>새 폴더</value></data>
+  <data name="RenameTitle" xml:space="preserve"><value>이름 바꾸기</value></data>
+  <data name="NewNamePrompt" xml:space="preserve"><value>새 이름:</value></data>
+  <data name="DeleteFavoritePromptFormat" xml:space="preserve"><value>'{0}' 항목을 삭제하시겠습니까?{1}</value></data>
+  <data name="DeleteFolderSuffix" xml:space="preserve"><value>&#xA;폴더 안의 모든 항목도 함께 삭제됩니다.</value></data>
+  <data name="InternetOptionsTitle" xml:space="preserve"><value>인터넷 옵션</value></data>
+  <data name="GeneralTab" xml:space="preserve"><value>일반</value></data>
+  <data name="SecurityTab" xml:space="preserve"><value>보안</value></data>
+  <data name="PrivacyTab" xml:space="preserve"><value>개인 정보</value></data>
+  <data name="ContentTab" xml:space="preserve"><value>내용</value></data>
+  <data name="ConnectionsTab" xml:space="preserve"><value>연결</value></data>
+  <data name="ProgramsTab" xml:space="preserve"><value>프로그램</value></data>
+  <data name="AdvancedTab" xml:space="preserve"><value>고급</value></data>
+  <data name="HomePageGroup" xml:space="preserve"><value>홈 페이지</value></data>
+  <data name="CurrentPageButton" xml:space="preserve"><value>현재 페이지</value></data>
+  <data name="DefaultButton" xml:space="preserve"><value>기본값</value></data>
+  <data name="BlankPageButton" xml:space="preserve"><value>빈 페이지</value></data>
+  <data name="StartupGroup" xml:space="preserve"><value>시작</value></data>
+  <data name="StartHome" xml:space="preserve"><value>홈 페이지에서 시작</value></data>
+  <data name="StartLast" xml:space="preserve"><value>마지막으로 사용한 페이지에서 시작</value></data>
+  <data name="HistoryGroup" xml:space="preserve"><value>열어본 페이지 목록</value></data>
+  <data name="HistoryRetentionFormat" xml:space="preserve"><value>페이지는 {0}일 동안, 최대 {1:N0}개까지 보관됩니다.</value></data>
+  <data name="ClearListButton" xml:space="preserve"><value>목록 지우기(&amp;C)</value></data>
+  <data name="DownloadGroup" xml:space="preserve"><value>다운로드</value></data>
+  <data name="UnavailableSetting" xml:space="preserve"><value>이 설정은 Indiana Expedition의 다음 버전에서 제공될 예정입니다.</value></data>
+  <data name="DownloadFolderDescription" xml:space="preserve"><value>다운로드 파일을 저장할 폴더를 선택하세요.</value></data>
+  <data name="InvalidHomePage" xml:space="preserve"><value>홈 페이지는 HTTP 또는 HTTPS 주소여야 합니다.</value></data>
+  <data name="AboutTitleFormat" xml:space="preserve"><value>{0} 정보</value></data>
+  <data name="AboutDescriptionFormat" xml:space="preserve"><value>Windows XP SP2의 Internet Explorer 6 사용 경험을&#xA;현대 WebView2 위에 재구성한 개인용 브라우저입니다.&#xA;&#xA;앱 버전: {0}&#xA;WebView2 Runtime: {1}</value></data>
+  <data name="AboutReference" xml:space="preserve"><value>MicrosoftEdge/WebView2Browser 샘플 참고</value></data>
+  <data name="RuntimeVersionUnavailable" xml:space="preserve"><value>확인할 수 없음</value></data>
+</root>

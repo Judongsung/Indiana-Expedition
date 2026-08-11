@@ -1,0 +1,22 @@
+## Visual Studio
+.vs/
+*.user
+*.suo
+
+## Build outputs
+bin/
+obj/
+artifacts/
+TestResults/
+
+## NuGet
+packages/
+.packages/
+*.nupkg
+
+## Local runtime data
+User Data/
+Browser Data/
+
+## Local visual reference without redistribution clearance
+/target.png
