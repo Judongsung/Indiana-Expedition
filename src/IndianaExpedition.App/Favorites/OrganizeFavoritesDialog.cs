@@ -9,7 +9,7 @@ using IndianaExpedition.Core.Services;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Favorites
 {
     internal sealed class OrganizeFavoritesDialog : LunaForm
     {

@@ -7,10 +7,11 @@ using Microsoft.Web.WebView2.WinForms;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Models;
 using IndianaExpedition.Core.Navigation;
+using IndianaExpedition.Find;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Permissions;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm
     {

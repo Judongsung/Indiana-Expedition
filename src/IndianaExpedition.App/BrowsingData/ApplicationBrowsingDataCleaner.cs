@@ -5,7 +5,7 @@ using System.Linq;
 using IndianaExpedition.Core.Services;
 using IndianaExpedition.Resources;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.BrowsingData
 {
     internal sealed class ApplicationBrowsingDataCleaner
     {

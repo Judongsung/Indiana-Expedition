@@ -6,7 +6,7 @@ using IndianaExpedition.Constants;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Dialogs
 {
     internal enum RuntimeRequirementState
     {

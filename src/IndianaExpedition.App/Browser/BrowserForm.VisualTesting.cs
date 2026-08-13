@@ -6,15 +6,19 @@ using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Web.WebView2.Core;
+using IndianaExpedition.BrowsingData;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Models;
 using IndianaExpedition.Downloads;
 using IndianaExpedition.Permissions;
 using IndianaExpedition.ContextMenus;
+using IndianaExpedition.Dialogs;
+using IndianaExpedition.Find;
 using IndianaExpedition.Resources;
+using IndianaExpedition.Settings;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm
     {
@@ -96,7 +100,7 @@ namespace IndianaExpedition
                     break;
                 case VisualTestState.ContextMenu:
                     _visualTestContextMenu = CreatePageContextMenu(
-                        new PageContextMenuModel(linkUri: null, selectionText: null));
+                        new PageContextMenuModel(linkUri: null, selectionText: null)).Menu;
                     break;
                 case VisualTestState.HelpMenu:
                     _helpMenu.ShowDropDown();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
+using IndianaExpedition.Browser;
 using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Models;
 using IndianaExpedition.Downloads;

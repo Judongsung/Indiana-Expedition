@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Find
 {
     internal interface IPageFindController : IDisposable
     {

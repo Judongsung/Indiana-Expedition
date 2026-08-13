@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Web.WebView2.Core;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Find
 {
     internal sealed class WebViewPageFindController : IPageFindController
     {

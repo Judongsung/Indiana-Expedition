@@ -6,7 +6,7 @@ using System.Windows.Forms;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Find
 {
     internal sealed class PageFindDialog : LunaForm
     {

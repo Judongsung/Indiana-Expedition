@@ -1,6 +1,6 @@
 using System;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Find
 {
     internal sealed class PageFindCriteria : IEquatable<PageFindCriteria>
     {

@@ -8,7 +8,7 @@ using IndianaExpedition.Permissions;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Permissions
 {
     internal sealed class PermissionRequestDialog : LunaForm
     {

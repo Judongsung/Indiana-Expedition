@@ -4,7 +4,9 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
+using IndianaExpedition.Browser;
 using IndianaExpedition.Core.Services;
+using IndianaExpedition.Dialogs;
 using IndianaExpedition.Resources;
 
 namespace IndianaExpedition.Downloads

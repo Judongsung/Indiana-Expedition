@@ -9,7 +9,7 @@ using IndianaExpedition.Core.Models;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm
     {

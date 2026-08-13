@@ -4,12 +4,12 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
-using IndianaExpedition.Permissions;
+using IndianaExpedition.Dialogs;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 using IndianaExpedition.Constants;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Permissions
 {
     internal sealed class SitePermissionsPanel : UserControl
     {

@@ -7,7 +7,7 @@ using System.Windows.Forms;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.BrowsingData
 {
     internal sealed class DeleteBrowsingDataDialog : LunaForm
     {

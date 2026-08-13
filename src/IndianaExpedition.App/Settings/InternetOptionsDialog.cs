@@ -11,7 +11,7 @@ using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 using IndianaExpedition.Permissions;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Settings
 {
     internal sealed class InternetOptionsDialog : LunaForm
     {

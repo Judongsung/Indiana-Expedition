@@ -6,49 +6,49 @@ using IndianaExpedition.Constants;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm
     {
-        private ContextMenuStrip CreatePageContextMenu(PageContextMenuModel model)
+        private PageContextMenuDefinition CreatePageContextMenu(PageContextMenuModel model)
         {
             if (model == null)
             {
                 throw new ArgumentNullException(nameof(model));
             }
 
-            var menu = new ContextMenuStrip { Renderer = new XpToolStripRenderer() };
-            var back = menu.Items.Add(Strings.ContextBack, null, (sender, args) => GoBack());
+            var definition = new PageContextMenuDefinition(
+                new ContextMenuStrip { Renderer = new XpToolStripRenderer() });
+            var back = definition.AddCommand(Strings.ContextBack, GoBack);
             back.Enabled = CoreWebView?.CanGoBack == true;
-            var forward = menu.Items.Add(Strings.ContextForward, null, (sender, args) => GoForward());
+            var forward = definition.AddCommand(Strings.ContextForward, GoForward);
             forward.Enabled = CoreWebView?.CanGoForward == true;
-            menu.Items.Add(Strings.ContextRefresh, null, (sender, args) => RefreshPage());
-            menu.Items.Add(new ToolStripSeparator());
+            definition.AddCommand(Strings.ContextRefresh, RefreshPage);
+            definition.AddSeparator();
 
             if (model.HasLink)
             {
-                menu.Items.Add(
+                definition.AddCommand(
                     Strings.ContextOpenLinkNewWindow,
-                    null,
-                    (sender, args) => _application.OpenWindow(model.LinkUri));
-                menu.Items.Add(
+                    () => _application.OpenWindow(model.LinkUri));
+                definition.AddCommand(
                     Strings.ContextCopyShortcut,
-                    null,
-                    (sender, args) => Clipboard.SetText(model.LinkUri));
-                menu.Items.Add(new ToolStripSeparator());
+                    () => Clipboard.SetText(model.LinkUri));
+                definition.AddSeparator();
             }
 
-            var copy = menu.Items.Add(Strings.ContextCopy, null, (sender, args) =>
-                Clipboard.SetText(model.SelectionText));
+            var copy = definition.AddCommand(
+                Strings.ContextCopy,
+                () => Clipboard.SetText(model.SelectionText));
             copy.Enabled = model.HasSelection;
-            menu.Items.Add(Strings.ContextSelectAll, null, (sender, args) =>
+            definition.AddCommand(Strings.ContextSelectAll, () =>
                 _ = CoreWebView?.ExecuteScriptAsync(string.Format(
                     CultureInfo.InvariantCulture,
                     BrowserScriptConstants.ExecuteCommandTemplate,
                     BrowserScriptConstants.SelectAllCommand)));
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(new ToolStripMenuItem(Strings.ContextProperties) { Enabled = false });
-            return menu;
+            definition.AddSeparator();
+            definition.AddDisabledItem(Strings.ContextProperties);
+            return definition;
         }
 
         private void ReplaceContextMenuSession(WebViewContextMenuSession session)

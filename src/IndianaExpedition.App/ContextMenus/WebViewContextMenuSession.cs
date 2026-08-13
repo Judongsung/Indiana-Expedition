@@ -7,16 +7,21 @@ namespace IndianaExpedition.ContextMenus
 {
     internal sealed class WebViewContextMenuSession : IDisposable
     {
+        private readonly PageContextMenuDefinition _definition;
         private readonly ContextMenuStrip _menu;
         private readonly CoreWebView2Deferral _deferral;
+        private Control _owner;
+        private Action _selectedCommand;
         private bool _disposed;
 
         internal WebViewContextMenuSession(
-            ContextMenuStrip menu,
+            PageContextMenuDefinition definition,
             CoreWebView2Deferral deferral)
         {
-            _menu = menu ?? throw new ArgumentNullException(nameof(menu));
+            _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+            _menu = definition.Menu;
             _deferral = deferral ?? throw new ArgumentNullException(nameof(deferral));
+            _menu.ItemClicked += OnItemClicked;
             _menu.Closed += OnMenuClosed;
         }
 
@@ -33,10 +38,26 @@ namespace IndianaExpedition.ContextMenus
                 throw new ArgumentNullException(nameof(owner));
             }
 
+            _owner = owner;
             _menu.Show(owner, location);
         }
 
         public void Dispose()
+        {
+            CompleteSession(command: null);
+        }
+
+        private void OnItemClicked(object sender, ToolStripItemClickedEventArgs args)
+        {
+            _definition.TryGetCommand(args.ClickedItem, out _selectedCommand);
+        }
+
+        private void OnMenuClosed(object sender, ToolStripDropDownClosedEventArgs args)
+        {
+            CompleteSession(_selectedCommand);
+        }
+
+        private void CompleteSession(Action command)
         {
             if (_disposed)
             {
@@ -44,29 +65,48 @@ namespace IndianaExpedition.ContextMenus
             }
 
             _disposed = true;
+            _menu.ItemClicked -= OnItemClicked;
             _menu.Closed -= OnMenuClosed;
             try
             {
-                _menu.Dispose();
+                _deferral.Complete();
             }
             finally
             {
-                try
-                {
-                    _deferral.Complete();
-                }
-                finally
-                {
-                    _deferral.Dispose();
-                }
+                Closed?.Invoke(this, EventArgs.Empty);
+                DispatchAfterContextMenuRequest(_owner, _menu, command);
             }
-
-            Closed?.Invoke(this, EventArgs.Empty);
         }
 
-        private void OnMenuClosed(object sender, ToolStripDropDownClosedEventArgs args)
+        private static void DispatchAfterContextMenuRequest(
+            Control owner,
+            ContextMenuStrip menu,
+            Action command)
         {
-            Dispose();
+            if (owner == null || owner.IsDisposed || !owner.IsHandleCreated)
+            {
+                menu.Dispose();
+                return;
+            }
+
+            try
+            {
+                owner.BeginInvoke(new MethodInvoker(() =>
+                {
+                    try
+                    {
+                        menu.Dispose();
+                    }
+                    finally
+                    {
+                        command?.Invoke();
+                    }
+                }));
+            }
+            catch (InvalidOperationException)
+            {
+                menu.Dispose();
+            }
         }
     }
 }

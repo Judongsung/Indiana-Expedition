@@ -6,10 +6,10 @@ using Microsoft.Web.WebView2.Core;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Navigation;
-using IndianaExpedition.Dialogs;
+using IndianaExpedition.Popups;
 using IndianaExpedition.Resources;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm
     {

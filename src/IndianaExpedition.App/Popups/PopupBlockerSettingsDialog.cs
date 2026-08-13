@@ -9,7 +9,7 @@ using IndianaExpedition.Core.Services;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition.Dialogs
+namespace IndianaExpedition.Popups
 {
     internal sealed class PopupBlockerSettingsDialog : LunaForm
     {

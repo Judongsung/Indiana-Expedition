@@ -14,7 +14,7 @@ using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 using IndianaExpedition.ContextMenus;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm
     {

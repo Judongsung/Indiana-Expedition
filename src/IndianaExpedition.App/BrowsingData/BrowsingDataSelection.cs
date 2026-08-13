@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Microsoft.Web.WebView2.Core;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.BrowsingData
 {
     [Flags]
     internal enum BrowsingDataSelection

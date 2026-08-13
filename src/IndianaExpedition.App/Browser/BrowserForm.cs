@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
+using IndianaExpedition.BrowsingData;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Models;
@@ -12,8 +13,9 @@ using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 using IndianaExpedition.Permissions;
 using IndianaExpedition.ContextMenus;
+using IndianaExpedition.Find;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm : LunaForm, IMessageFilter
     {

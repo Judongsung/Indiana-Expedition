@@ -8,7 +8,7 @@ using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Models;
 using IndianaExpedition.Resources;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm
     {

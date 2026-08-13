@@ -6,12 +6,16 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
+using IndianaExpedition.BrowsingData;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Navigation;
+using IndianaExpedition.Dialogs;
+using IndianaExpedition.Favorites;
 using IndianaExpedition.Resources;
+using IndianaExpedition.Settings;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Browser
 {
     internal sealed partial class BrowserForm
     {

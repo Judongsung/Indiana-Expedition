@@ -7,6 +7,7 @@ using Microsoft.Web.WebView2.Core;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core;
 using IndianaExpedition.Core.Constants;
+using IndianaExpedition.Dialogs;
 using IndianaExpedition.Resources;
 
 namespace IndianaExpedition

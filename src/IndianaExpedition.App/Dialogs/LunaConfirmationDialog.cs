@@ -3,7 +3,7 @@ using System.Windows.Forms;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Dialogs
 {
     internal sealed class LunaConfirmationDialog : LunaForm
     {

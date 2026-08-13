@@ -6,12 +6,12 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using IndianaExpedition.Core.Models;
-using IndianaExpedition.Downloads;
+using IndianaExpedition.Dialogs;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 using IndianaExpedition.Constants;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Downloads
 {
     internal sealed class DownloadHistoryDialog : LunaForm
     {

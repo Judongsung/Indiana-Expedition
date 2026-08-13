@@ -5,11 +5,11 @@ using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 using IndianaExpedition.Constants;
-using IndianaExpedition.Downloads;
+using IndianaExpedition.Dialogs;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
-namespace IndianaExpedition
+namespace IndianaExpedition.Downloads
 {
     internal sealed class DownloadProgressDialog : LunaForm
     {
