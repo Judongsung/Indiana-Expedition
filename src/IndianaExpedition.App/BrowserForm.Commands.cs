@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -170,7 +171,8 @@ namespace IndianaExpedition
         {
             using (var dialog = new DeleteBrowsingDataDialog(
                        DeleteBrowsingDataAsync,
-                       CoreWebView?.Profile != null))
+                       CoreWebView?.Profile != null,
+                       sitePermissionsAvailable: _sitePermissionController != null))
             {
                 dialog.ShowDialog(this);
             }
@@ -180,28 +182,34 @@ namespace IndianaExpedition
         {
             var profile = CoreWebView?.Profile;
             var kinds = BrowsingDataMapper.ToWebViewKinds(selection);
-            var profileCleared = false;
             if (profile != null && kinds != (CoreWebView2BrowsingDataKinds)0)
             {
                 await profile.ClearBrowsingDataAsync(kinds).ConfigureAwait(true);
-                profileCleared = true;
             }
 
-            if (selection.HasFlag(BrowsingDataSelection.History))
+            var failures = new List<string>();
+            if (selection.HasFlag(BrowsingDataSelection.SitePermissions) &&
+                _sitePermissionController != null)
             {
                 try
                 {
-                    _services.History.Clear();
+                    await _sitePermissionController.ResetAllAsync().ConfigureAwait(true);
                 }
-                catch (Exception ex) when (profileCleared)
+                catch (Exception ex)
                 {
-                    throw new InvalidOperationException(
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            Strings.BrowsingDataPartialFailureFormat,
-                            ex.Message),
-                        ex);
+                    failures.Add(Strings.SitePermissionsItem + ": " + ex.Message);
                 }
+            }
+
+            failures.AddRange(_applicationBrowsingDataCleaner.Clear(selection));
+
+            if (failures.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        Strings.BrowsingDataApplicationPartialFailureFormat,
+                        string.Join(Environment.NewLine, failures)));
             }
 
             _statusLabel.Text = Strings.BrowsingDataDeleted;
@@ -209,7 +217,10 @@ namespace IndianaExpedition
 
         private void ShowInternetOptionsDialog()
         {
-            using (var dialog = new InternetOptionsDialog(_services.Settings, CoreWebView?.Source))
+            using (var dialog = new InternetOptionsDialog(
+                       _services.Settings,
+                       CoreWebView?.Source,
+                       _sitePermissionController))
             {
                 dialog.DeleteBrowsingDataRequested += (sender, args) => ShowDeleteBrowsingDataDialog();
                 dialog.ShowDialog(this);

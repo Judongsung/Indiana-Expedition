@@ -5,6 +5,8 @@ using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Models;
+using IndianaExpedition.Downloads;
+using IndianaExpedition.Permissions;
 
 namespace IndianaExpedition
 {
@@ -14,6 +16,9 @@ namespace IndianaExpedition
         private readonly ApplicationLaunchOptions _launchOptions;
         private readonly HashSet<BrowserForm> _windows = new HashSet<BrowserForm>();
         private readonly Task<CoreWebView2Environment> _environmentTask;
+        private readonly DownloadCoordinator _downloads;
+        private readonly PermissionPromptCoordinator _permissionPrompts =
+            new PermissionPromptCoordinator();
         private bool _disposed;
 
         internal BrowserApplicationContext(
@@ -22,6 +27,7 @@ namespace IndianaExpedition
         {
             _services = services ?? throw new ArgumentNullException(nameof(services));
             _launchOptions = launchOptions ?? throw new ArgumentNullException(nameof(launchOptions));
+            _downloads = new DownloadCoordinator(services.Settings, services.Downloads);
             _environmentTask = launchOptions.IsVisualTestMode
                 ? Task.FromResult<CoreWebView2Environment>(null)
                 : CoreWebView2Environment.CreateAsync(
@@ -35,6 +41,10 @@ namespace IndianaExpedition
         internal BrowserApplicationServices Services => _services;
 
         internal Task<CoreWebView2Environment> EnvironmentTask => _environmentTask;
+
+        internal DownloadCoordinator Downloads => _downloads;
+
+        internal PermissionPromptCoordinator PermissionPrompts => _permissionPrompts;
 
         internal BrowserForm OpenWindow(string initialUrl = null)
         {
@@ -126,6 +136,7 @@ namespace IndianaExpedition
                     window.Close();
                 }
                 _windows.Clear();
+                _downloads.Dispose();
             }
 
             _disposed = true;

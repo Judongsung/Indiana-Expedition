@@ -8,6 +8,7 @@ using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Models;
 using IndianaExpedition.Core.Navigation;
 using IndianaExpedition.Resources;
+using IndianaExpedition.Permissions;
 
 namespace IndianaExpedition
 {
@@ -17,6 +18,7 @@ namespace IndianaExpedition
         {
             _pageFindController?.Dispose();
             _pageFindController = new WebViewPageFindController(webView.CoreWebView2);
+            _sitePermissionController = new WebViewSitePermissionController(webView.CoreWebView2.Profile);
             ApplyZoomSetting(_services.Settings.Current.DefaultZoomLevel);
         }
 
@@ -24,6 +26,7 @@ namespace IndianaExpedition
         {
             _pageFindController?.Dispose();
             _pageFindController = null;
+            _sitePermissionController = null;
         }
 
         private void ShowPageFindDialog()
@@ -128,6 +131,8 @@ namespace IndianaExpedition
                     return ManagedBrowserCommand.FindPrevious;
                 case Keys.Control | Keys.P:
                     return ManagedBrowserCommand.Print;
+                case Keys.Control | Keys.J:
+                    return ManagedBrowserCommand.Downloads;
                 case Keys.Control | Keys.Add:
                 case Keys.Control | Keys.Oemplus:
                 case Keys.Control | Keys.Shift | Keys.Oemplus:
@@ -159,6 +164,9 @@ namespace IndianaExpedition
                 case ManagedBrowserCommand.Print:
                     PrintPage();
                     break;
+                case ManagedBrowserCommand.Downloads:
+                    _application.Downloads.ShowHistory(this);
+                    break;
                 case ManagedBrowserCommand.ZoomIn:
                     StepZoomLevel(1);
                     break;
@@ -178,6 +186,7 @@ namespace IndianaExpedition
             FindNext,
             FindPrevious,
             Print,
+            Downloads,
             ZoomIn,
             ZoomOut,
             ZoomReset

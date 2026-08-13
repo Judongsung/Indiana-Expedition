@@ -7,11 +7,13 @@ namespace IndianaExpedition.Core.Constants
         public const string SettingsFileName = "settings.json";
         public const string FavoritesFileName = "favorites.json";
         public const string HistoryFileName = "history.json";
+        public const string DownloadHistoryFileName = "downloads.json";
         public const string SessionFileName = "session.json";
         public const string TemporaryFileSuffix = ".tmp";
         public const string BackupFileSuffix = ".bak";
         public const string CorruptFileMarker = ".corrupt-";
         public const string BackupTimestampFormat = "yyyyMMdd-HHmmssfff";
+        public const string CompactIdentifierFormat = "N";
     }
 
     public static class WindowsIntegrationConstants

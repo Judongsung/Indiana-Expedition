@@ -10,6 +10,8 @@ using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Models;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
+using IndianaExpedition.Permissions;
+using IndianaExpedition.ContextMenus;
 
 namespace IndianaExpedition
 {
@@ -20,6 +22,7 @@ namespace IndianaExpedition
         private readonly string _initialUrl;
         private readonly Icon _applicationIcon;
         private readonly bool _visualTestMode;
+        private readonly ApplicationBrowsingDataCleaner _applicationBrowsingDataCleaner;
         private readonly VisualTestState _visualTestState;
         private readonly string _visualTestReadyFile;
 
@@ -53,8 +56,10 @@ namespace IndianaExpedition
         private ToolStripButton _stopButton;
         private ToolStripButton _refreshButton;
         private ToolStripButton _homeButton;
-        private ToolStripButton _favoritesButton;
-        private ToolStripButton _historyButton;
+        private readonly Dictionary<ExplorerMode, ToolStripButton> _explorerButtons =
+            new Dictionary<ExplorerMode, ToolStripButton>();
+        private readonly Dictionary<ExplorerMode, ExplorerSidebarDefinition> _explorerSidebars =
+            new Dictionary<ExplorerMode, ExplorerSidebarDefinition>();
         private ToolStripMenuItem _favoritesMenu;
         private ToolStripMenuItem _helpMenu;
         private ToolStripMenuItem _linksBarMenuItem;
@@ -67,6 +72,9 @@ namespace IndianaExpedition
 
         private WebView2 _webView;
         private IPageFindController _pageFindController;
+        private ISitePermissionController _sitePermissionController;
+        private WebViewContextMenuSession _contextMenuSession;
+        private ContextMenuStrip _visualTestContextMenu;
         private PageFindCriteria _lastFindCriteria = new PageFindCriteria();
         private Form _visualTestDialog;
         private IPageFindController _visualTestFindController;
@@ -95,6 +103,9 @@ namespace IndianaExpedition
             }
 
             _services = application.Services;
+            _applicationBrowsingDataCleaner = new ApplicationBrowsingDataCleaner(
+                _services.History,
+                _services.Downloads);
             _visualTestMode = launchOptions.IsVisualTestMode;
             _visualTestState = launchOptions.VisualTestState;
             _visualTestReadyFile = launchOptions.VisualTestReadyFile;
@@ -123,6 +134,7 @@ namespace IndianaExpedition
                 PreventActivationOnShow = true;
             }
 
+            InitializeExplorerSidebars();
             BuildLayout();
             ApplyPersistedViewSettings();
             RebuildFavoritesMenu();
@@ -272,6 +284,12 @@ namespace IndianaExpedition
 
         private void OnFormClosing(object sender, FormClosingEventArgs args)
         {
+            if (!_application.Downloads.ConfirmOwnerClose(this, args.CloseReason))
+            {
+                args.Cancel = true;
+                return;
+            }
+
             var url = CoreWebView?.Source;
             if (!string.IsNullOrWhiteSpace(url))
             {
@@ -364,6 +382,8 @@ namespace IndianaExpedition
                 _services.History.Changed -= OnHistoryChanged;
                 _services.Settings.Changed -= OnSettingsChanged;
                 _visualTestDialog?.Dispose();
+                _visualTestContextMenu?.Dispose();
+                ReplaceContextMenuSession(null);
                 _visualTestFindController?.Dispose();
                 DetachWebViewFeatures(_webView);
                 _webView?.Dispose();
@@ -379,6 +399,19 @@ namespace IndianaExpedition
             None,
             Favorites,
             History
+        }
+
+        private sealed class ExplorerSidebarDefinition
+        {
+            internal ExplorerSidebarDefinition(Func<string> getTitle, Action populate)
+            {
+                GetTitle = getTitle ?? throw new ArgumentNullException(nameof(getTitle));
+                Populate = populate ?? throw new ArgumentNullException(nameof(populate));
+            }
+
+            internal Func<string> GetTitle { get; }
+
+            internal Action Populate { get; }
         }
     }
 }

@@ -36,6 +36,15 @@ namespace IndianaExpedition.Constants
         internal const int InformationCloseWidth = 28;
     }
 
+    internal static class DownloadUiConstants
+    {
+        internal const long BytesPerUnit = 1024L;
+        internal const int ProgressMaximum = 100;
+        internal const string WholeByteFormat = "{0:N0} {1}";
+        internal const string ScaledByteFormat = "{0:N1} {1}";
+        internal const string HistoryDateFormat = "g";
+    }
+
     internal static class LunaMetrics
     {
         internal const int FrameSideThickness = 4;

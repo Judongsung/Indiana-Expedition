@@ -131,6 +131,11 @@ namespace IndianaExpedition
             _favoritesMenu.DropDownItems.Add(new ToolStripSeparator());
 
             var tools = new ToolStripMenuItem(Strings.MenuTools);
+            tools.DropDownItems.Add(CreateMenuItem(
+                Strings.ViewDownloads,
+                (s, e) => _application.Downloads.ShowHistory(this),
+                Keys.Control | Keys.J));
+            tools.DropDownItems.Add(new ToolStripSeparator());
             tools.DropDownItems.Add(CreateMenuItem(Strings.DeleteHistory, (s, e) => ShowDeleteBrowsingDataDialog()));
             tools.DropDownItems.Add(new ToolStripSeparator());
             var popupBlocker = new ToolStripMenuItem(Strings.PopupBlocker);
@@ -176,8 +181,10 @@ namespace IndianaExpedition
             _stopButton = CreateToolbarButton(Strings.ToolbarStop, GlyphKind.Stop, (s, e) => StopNavigation());
             _refreshButton = CreateToolbarButton(Strings.ToolbarRefresh, GlyphKind.Refresh, (s, e) => RefreshPage());
             _homeButton = CreateToolbarButton(Strings.ToolbarHome, GlyphKind.Home, (s, e) => GoHome());
-            _favoritesButton = CreateToolbarButton(Strings.ToolbarFavorites, GlyphKind.Favorites, (s, e) => ToggleExplorerSidebar(ExplorerMode.Favorites), showText: true);
-            _historyButton = CreateToolbarButton(Strings.ToolbarHistory, GlyphKind.History, (s, e) => ToggleExplorerSidebar(ExplorerMode.History), showText: true);
+            var favoritesButton = CreateToolbarButton(Strings.ToolbarFavorites, GlyphKind.Favorites, (s, e) => ToggleExplorerSidebar(ExplorerMode.Favorites), showText: true);
+            var historyButton = CreateToolbarButton(Strings.ToolbarHistory, GlyphKind.History, (s, e) => ToggleExplorerSidebar(ExplorerMode.History), showText: true);
+            _explorerButtons[ExplorerMode.Favorites] = favoritesButton;
+            _explorerButtons[ExplorerMode.History] = historyButton;
 
             _backButton.Enabled = false;
             _forwardButton.Enabled = false;
@@ -192,8 +199,8 @@ namespace IndianaExpedition
                 _refreshButton,
                 _homeButton,
                 new ToolStripSeparator(),
-                _favoritesButton,
-                _historyButton
+                favoritesButton,
+                historyButton
             });
             return toolStrip;
         }

@@ -17,6 +17,7 @@ namespace IndianaExpedition.Constants
         internal const string VisualTestDataDirectoryArgument = "--visual-test-data-directory";
         internal const string VisualTestReadyFileArgument = "--visual-test-ready-file";
         internal const string VisualTestDataDirectoryName = "IndianaExpedition.VisualTest";
+        internal const string DownloadSessionNotFinishedMessage = "The download has not finished.";
     }
 
     internal static class BrowserUiConstants
@@ -51,5 +52,16 @@ namespace IndianaExpedition.Constants
         internal const string FindTerm = "Windows XP";
         internal const int FindActiveMatchIndex = 2;
         internal const int FindMatchCount = 5;
+        internal const string DownloadFileName = "WindowsXP-KB-demo.exe";
+        internal const string DownloadImageFileName = "luna-theme-reference.png";
+        internal const string DownloadDocumentFileName = "legacy-browser-notes.pdf";
+        internal const string DownloadSourceHost = "download.microsoft.com";
+        internal const long DownloadBytesReceived = 7340032L;
+        internal const long DownloadTotalBytes = 10485760L;
+        internal const long DownloadImageBytes = 2457600L;
+        internal const long DownloadDocumentBytes = 786432L;
+        internal const string PermissionOrigin = "https://example.com";
+        internal const int ContextMenuLeft = 310;
+        internal const int ContextMenuTop = 160;
     }
 }

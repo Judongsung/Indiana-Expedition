@@ -22,6 +22,7 @@ namespace IndianaExpedition.Core.Tests
             Run("브라우저 확대 단계", BrowserZoomPolicyTests);
             Run("중첩 즐겨찾기 CRUD", FavoritesTests);
             Run("방문 기록 보관 정책", HistoryTests);
+            Run("다운로드 기록 보관 정책", DownloadHistoryTests);
             Run("마지막 세션 저장", SessionTests);
 
             if (Failures.Count == 0)
@@ -119,13 +120,26 @@ namespace IndianaExpedition.Core.Tests
                 True(migrated.Current.ShowStatusBar, "이관 중 상태 표시줄 설정이 손실되었습니다.");
                 True(migrated.Current.PopupBlockerEnabled, "기존 설정 이관 시 팝업 차단이 기본 활성화되어야 합니다.");
                 Equal(BrowserZoomLevel.Medium, migrated.Current.DefaultZoomLevel, "기존 설정 이관 시 확대 수준이 100%여야 합니다.");
+                True(!migrated.Current.AskWhereToSaveDownloads, "기존 설정 이관 시 자동 저장을 유지해야 합니다.");
                 var persistedMigration = new AtomicJsonFileStore<BrowserSettings>(path, BrowserSettings.CreateDefault).Load();
                 Equal(BrowserDefaults.DataSchemaVersion, persistedMigration.SchemaVersion, "이관된 설정 스키마가 파일에 저장되지 않았습니다.");
 
-                migrated.Update(settings =>
+                File.WriteAllText(
+                    path,
+                    "{\"SchemaVersion\":2,\"UiCulture\":\"ko-KR\",\"HomeUrl\":\"https://schema2.example/\",\"SearchUrlTemplate\":\"https://www.google.com/search?q={query}\",\"StartupMode\":0,\"DownloadDirectory\":\"C:\\\\Downloads\",\"ShowLinksBar\":false,\"ShowStatusBar\":true,\"PopupBlockerEnabled\":false,\"AllowedPopupOrigins\":[\"https://allowed.example\"],\"DefaultZoomLevel\":3}");
+                var schema2Migration = new SettingsService(path);
+                Equal(BrowserDefaults.DataSchemaVersion, schema2Migration.Current.SchemaVersion, "스키마 2 설정이 최신 버전으로 이관되지 않았습니다.");
+                True(!schema2Migration.Current.PopupBlockerEnabled, "스키마 2에서 사용자가 끈 팝업 차단 설정을 보존해야 합니다.");
+                Equal(BrowserZoomLevel.Larger, schema2Migration.Current.DefaultZoomLevel, "스키마 2 확대 수준을 보존해야 합니다.");
+                Equal(1, schema2Migration.Current.AllowedPopupOrigins.Count, "스키마 2 허용 출처를 보존해야 합니다.");
+                True(!schema2Migration.Current.AskWhereToSaveDownloads, "기존 사용자에게 다운로드 자동 저장을 기본 적용해야 합니다.");
+
+                schema2Migration.Update(settings =>
                 {
                     settings.PopupBlockerEnabled = false;
                     settings.DefaultZoomLevel = BrowserZoomLevel.Largest;
+                    settings.AskWhereToSaveDownloads = true;
+                    settings.AllowedPopupOrigins.Clear();
                     settings.AllowedPopupOrigins.Add("HTTPS://Example.COM/path");
                     settings.AllowedPopupOrigins.Add("https://example.com/duplicate");
                     settings.AllowedPopupOrigins.Add("javascript:alert(1)");
@@ -133,6 +147,7 @@ namespace IndianaExpedition.Core.Tests
                 var migratedReloaded = new SettingsService(path);
                 True(!migratedReloaded.Current.PopupBlockerEnabled, "사용자가 끈 팝업 차단 설정이 유지되지 않았습니다.");
                 Equal(BrowserZoomLevel.Largest, migratedReloaded.Current.DefaultZoomLevel, "확대 수준이 유지되지 않았습니다.");
+                True(migratedReloaded.Current.AskWhereToSaveDownloads, "다운로드 저장 위치 확인 설정이 유지되지 않았습니다.");
                 Equal(1, migratedReloaded.Current.AllowedPopupOrigins.Count, "허용 출처 정규화 또는 중복 제거가 잘못되었습니다.");
                 Equal("https://example.com", migratedReloaded.Current.AllowedPopupOrigins[0], "허용 출처가 정규화되지 않았습니다.");
 
@@ -250,11 +265,70 @@ namespace IndianaExpedition.Core.Tests
             });
         }
 
+        private static void DownloadHistoryTests()
+        {
+            WithTemporaryDirectory(root =>
+            {
+                var path = Path.Combine(root, StorageConstants.DownloadHistoryFileName);
+                var downloadedFile = Path.Combine(root, "completed.zip");
+                File.WriteAllText(downloadedFile, "test");
+                var now = DateTime.UtcNow;
+                var service = new DownloadHistoryService(path, maximumEntries: 2);
+
+                var completed = service.Add(new DownloadRecord
+                {
+                    FilePath = downloadedFile,
+                    StartedAtUtc = now.AddMinutes(-2),
+                    FinishedAtUtc = now.AddMinutes(-1),
+                    BytesReceived = 4,
+                    TotalBytes = 4,
+                    State = DownloadRecordState.Completed
+                });
+                service.Add(new DownloadRecord
+                {
+                    FilePath = Path.Combine(root, "failed.zip"),
+                    StartedAtUtc = now.AddMinutes(-1),
+                    FinishedAtUtc = now,
+                    State = DownloadRecordState.Failed
+                });
+                service.Add(new DownloadRecord
+                {
+                    FilePath = Path.Combine(root, "canceled.zip"),
+                    StartedAtUtc = now,
+                    FinishedAtUtc = now.AddMinutes(1),
+                    State = DownloadRecordState.Canceled
+                });
+
+                Equal(2, service.Items.Count, "다운로드 기록 최대 개수가 적용되지 않았습니다.");
+                Equal(DownloadRecordState.Canceled, service.Items[0].State, "다운로드 기록 최신순 정렬이 잘못되었습니다.");
+                True(service.Items.All(item => string.IsNullOrEmpty(item.FileName) == false), "다운로드 파일명이 정규화되지 않았습니다.");
+
+                var reloaded = new DownloadHistoryService(path, maximumEntries: 2);
+                Equal(2, reloaded.Items.Count, "다운로드 기록이 재시작 후 유지되지 않았습니다.");
+                True(reloaded.Items.Any(item => item.State == DownloadRecordState.Failed), "실패 기록이 유지되지 않았습니다.");
+
+                completed.FinishedAtUtc = now.AddMinutes(2);
+                service.Add(completed);
+                True(service.Remove(completed.Id), "선택한 다운로드 기록을 제거하지 못했습니다.");
+                True(File.Exists(downloadedFile), "다운로드 기록 제거가 실제 파일을 삭제하면 안 됩니다.");
+
+                service.Clear();
+                Equal(0, new DownloadHistoryService(path).Items.Count, "다운로드 기록 전체 삭제가 저장되지 않았습니다.");
+
+                File.WriteAllText(path, "{ invalid json");
+                var recovered = new DownloadHistoryService(path);
+                Equal(0, recovered.Items.Count, "손상된 다운로드 기록에서 복구하지 못했습니다.");
+                True(
+                    Directory.GetFiles(root, StorageConstants.DownloadHistoryFileName + ".corrupt-*.bak").Length == 1,
+                    "손상된 다운로드 기록 백업이 없습니다.");
+            });
+        }
+
         private static void WithTemporaryDirectory(Action<string> test)
         {
             var root = Path.Combine(
                 Path.GetTempPath(),
-                "indiana-expedition-tests-" + Guid.NewGuid().ToString("N"));
+                "indiana-expedition-tests-" + Guid.NewGuid().ToString(StorageConstants.CompactIdentifierFormat));
             Directory.CreateDirectory(root);
 
             try

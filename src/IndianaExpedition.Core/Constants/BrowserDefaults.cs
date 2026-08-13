@@ -2,7 +2,7 @@ namespace IndianaExpedition.Core.Constants
 {
     public static class BrowserDefaults
     {
-        public const int DataSchemaVersion = 2;
+        public const int DataSchemaVersion = 3;
         public const string UiCultureName = "ko-KR";
         public const string HomeUrl = "https://www.google.com/";
         public const string SearchUrlTemplate = "https://www.google.com/search?q={query}";
@@ -26,6 +26,11 @@ namespace IndianaExpedition.Core.Constants
     {
         public const int RetentionDays = 30;
         public const int MaximumEntries = 2000;
+    }
+
+    public static class DownloadHistoryPolicy
+    {
+        public const int MaximumEntries = 200;
     }
 
     internal static class PopupPolicyConstants

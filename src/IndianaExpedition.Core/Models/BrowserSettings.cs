@@ -58,6 +58,9 @@ namespace IndianaExpedition.Core.Models
         [DataMember(Order = 10)]
         public BrowserZoomLevel DefaultZoomLevel { get; set; }
 
+        [DataMember(Order = 11)]
+        public bool AskWhereToSaveDownloads { get; set; }
+
         public static BrowserSettings CreateDefault()
         {
             return new BrowserSettings
@@ -72,7 +75,8 @@ namespace IndianaExpedition.Core.Models
                 ShowStatusBar = true,
                 PopupBlockerEnabled = true,
                 AllowedPopupOrigins = new List<string>(),
-                DefaultZoomLevel = BrowserZoomLevel.Medium
+                DefaultZoomLevel = BrowserZoomLevel.Medium,
+                AskWhereToSaveDownloads = false
             };
         }
 
@@ -90,7 +94,8 @@ namespace IndianaExpedition.Core.Models
                 ShowStatusBar = ShowStatusBar,
                 PopupBlockerEnabled = PopupBlockerEnabled,
                 AllowedPopupOrigins = new List<string>(AllowedPopupOrigins ?? new List<string>()),
-                DefaultZoomLevel = DefaultZoomLevel
+                DefaultZoomLevel = DefaultZoomLevel,
+                AskWhereToSaveDownloads = AskWhereToSaveDownloads
             };
         }
     }

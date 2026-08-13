@@ -16,6 +16,7 @@ namespace IndianaExpedition
         SiteStorage = 1 << 4,
         Autofill = 1 << 5,
         Passwords = 1 << 6,
+        SitePermissions = 1 << 7,
         SafeDefaults = History | DownloadHistory | DiskCache | Cookies | SiteStorage
     }
 

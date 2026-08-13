@@ -12,6 +12,7 @@ namespace IndianaExpedition
             Settings = new SettingsService(paths.SettingsFile);
             Favorites = new FavoritesService(paths.FavoritesFile);
             History = new HistoryService(paths.HistoryFile);
+            Downloads = new DownloadHistoryService(paths.DownloadHistoryFile);
             Session = new SessionService(paths.SessionFile);
         }
 
@@ -22,6 +23,8 @@ namespace IndianaExpedition
         internal FavoritesService Favorites { get; }
 
         internal HistoryService History { get; }
+
+        internal DownloadHistoryService Downloads { get; }
 
         internal SessionService Session { get; }
     }

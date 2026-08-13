@@ -26,12 +26,13 @@ namespace IndianaExpedition
         internal DeleteBrowsingDataDialog(
             Func<BrowsingDataSelection, Task> deleteAction,
             bool profileAvailable,
+            bool sitePermissionsAvailable = false,
             bool preventActivationOnShow = false)
         {
             _deleteAction = deleteAction ?? throw new ArgumentNullException(nameof(deleteAction));
             PreventActivationOnShow = preventActivationOnShow;
             Text = Strings.DeleteBrowsingDataTitle;
-            SetContentClientSize(526, 458);
+            SetContentClientSize(526, 492);
             LunaResizable = false;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -48,37 +49,38 @@ namespace IndianaExpedition
             {
                 Text = Strings.DeleteBrowsingDataTitle,
                 Location = new Point(18, 68),
-                Size = new Size(490, 252)
+                Size = new Size(490, 282)
             };
 
             AddOption(group, BrowsingDataSelection.History, Strings.BrowsingHistoryItem, 26, enabled: true);
-            AddOption(group, BrowsingDataSelection.DownloadHistory, Strings.DownloadHistoryItem, 56, enabled: profileAvailable);
+            AddOption(group, BrowsingDataSelection.DownloadHistory, Strings.DownloadHistoryItem, 56, enabled: true);
             AddOption(group, BrowsingDataSelection.DiskCache, Strings.DiskCacheItem, 86, enabled: profileAvailable);
             AddOption(group, BrowsingDataSelection.Cookies, Strings.CookiesItem, 116, enabled: profileAvailable);
             AddOption(group, BrowsingDataSelection.SiteStorage, Strings.SiteStorageItem, 146, enabled: profileAvailable);
             AddOption(group, BrowsingDataSelection.Autofill, Strings.AutofillItem, 176, enabled: profileAvailable);
             AddOption(group, BrowsingDataSelection.Passwords, Strings.SavedPasswordsItem, 206, enabled: profileAvailable);
+            AddOption(group, BrowsingDataSelection.SitePermissions, Strings.SitePermissionsItem, 236, enabled: sitePermissionsAvailable);
 
             _idleMessage = profileAvailable ? Strings.DeleteBrowsingDataWarning : Strings.ProfileDataUnavailable;
             _idleMessageColor = profileAvailable ? SystemColors.ControlText : SystemColors.GrayText;
             _messageLabel = new Label
             {
                 Text = _idleMessage,
-                Location = new Point(18, 332),
+                Location = new Point(18, 362),
                 Size = new Size(490, 54),
                 ForeColor = _idleMessageColor
             };
             _deleteButton = new XpButton
             {
                 Text = Strings.DeleteSelected,
-                Location = new Point(316, 408),
+                Location = new Point(316, 442),
                 Size = new Size(92, 27)
             };
             _deleteButton.Click += async (sender, args) => await DeleteAsync().ConfigureAwait(true);
             _cancelButton = new XpButton
             {
                 Text = Strings.Cancel,
-                Location = new Point(416, 408),
+                Location = new Point(416, 442),
                 Size = new Size(92, 27),
                 DialogResult = DialogResult.Cancel
             };

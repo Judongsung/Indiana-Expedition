@@ -12,49 +12,61 @@ namespace IndianaExpedition
 {
     internal sealed partial class BrowserForm
     {
+        private void InitializeExplorerSidebars()
+        {
+            _explorerSidebars[ExplorerMode.Favorites] = new ExplorerSidebarDefinition(
+                () => Strings.FavoritesTitle,
+                PopulateFavoritesTree);
+            _explorerSidebars[ExplorerMode.History] = new ExplorerSidebarDefinition(
+                () => Strings.HistoryTitle,
+                PopulateHistoryTree);
+        }
+
         private void ToggleExplorerSidebar(ExplorerMode mode)
         {
+            if (!_explorerSidebars.TryGetValue(mode, out var definition))
+            {
+                return;
+            }
+
             if (_explorerMode == mode && !_contentSplit.Panel1Collapsed)
             {
                 HideExplorerSidebar();
                 return;
             }
 
-            switch (mode)
-            {
-                case ExplorerMode.Favorites:
-                    ShowFavoritesSidebar();
-                    break;
-                case ExplorerMode.History:
-                    ShowHistorySidebar();
-                    break;
-            }
+            ShowExplorerSidebar(mode, definition);
         }
 
         private void ShowFavoritesSidebar()
         {
-            _explorerMode = ExplorerMode.Favorites;
-            UpdateExplorerButtonStates();
-            _explorerTitle.Text = Strings.FavoritesTitle;
-            _contentSplit.Panel1Collapsed = false;
-            if (_contentSplit.Width > 500)
-            {
-                _contentSplit.SplitterDistance = Math.Min(240, _contentSplit.Width / 3);
-            }
-            PopulateFavoritesTree();
+            ShowExplorerSidebar(ExplorerMode.Favorites);
         }
 
         private void ShowHistorySidebar()
         {
-            _explorerMode = ExplorerMode.History;
+            ShowExplorerSidebar(ExplorerMode.History);
+        }
+
+        private void ShowExplorerSidebar(ExplorerMode mode)
+        {
+            if (_explorerSidebars.TryGetValue(mode, out var definition))
+            {
+                ShowExplorerSidebar(mode, definition);
+            }
+        }
+
+        private void ShowExplorerSidebar(ExplorerMode mode, ExplorerSidebarDefinition definition)
+        {
+            _explorerMode = mode;
             UpdateExplorerButtonStates();
-            _explorerTitle.Text = Strings.HistoryTitle;
+            _explorerTitle.Text = definition.GetTitle();
             _contentSplit.Panel1Collapsed = false;
             if (_contentSplit.Width > 500)
             {
                 _contentSplit.SplitterDistance = Math.Min(240, _contentSplit.Width / 3);
             }
-            PopulateHistoryTree();
+            definition.Populate();
         }
 
         private void HideExplorerSidebar()
@@ -67,14 +79,9 @@ namespace IndianaExpedition
 
         private void UpdateExplorerButtonStates()
         {
-            if (_favoritesButton != null)
+            foreach (var item in _explorerButtons)
             {
-                _favoritesButton.Checked = _explorerMode == ExplorerMode.Favorites;
-            }
-
-            if (_historyButton != null)
-            {
-                _historyButton.Checked = _explorerMode == ExplorerMode.History;
+                item.Value.Checked = item.Key == _explorerMode;
             }
         }
 

@@ -19,6 +19,7 @@ namespace IndianaExpedition.Core
             SettingsFile = Path.Combine(DataDirectory, StorageConstants.SettingsFileName);
             FavoritesFile = Path.Combine(DataDirectory, StorageConstants.FavoritesFileName);
             HistoryFile = Path.Combine(DataDirectory, StorageConstants.HistoryFileName);
+            DownloadHistoryFile = Path.Combine(DataDirectory, StorageConstants.DownloadHistoryFileName);
             SessionFile = Path.Combine(DataDirectory, StorageConstants.SessionFileName);
         }
 
@@ -33,6 +34,8 @@ namespace IndianaExpedition.Core
         public string FavoritesFile { get; }
 
         public string HistoryFile { get; }
+
+        public string DownloadHistoryFile { get; }
 
         public string SessionFile { get; }
 

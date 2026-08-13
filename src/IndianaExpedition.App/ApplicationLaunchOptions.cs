@@ -11,6 +11,12 @@ namespace IndianaExpedition
         PopupBlocked,
         FindDialog,
         DeleteBrowsingDataDialog,
+        DownloadProgressDialog,
+        DownloadCompletedDialog,
+        DownloadHistoryDialog,
+        PermissionRequestDialog,
+        PrivacyTab,
+        ContextMenu,
         HelpMenu,
         AboutDialog
     }

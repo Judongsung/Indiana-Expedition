@@ -12,6 +12,7 @@ using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Navigation;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
+using IndianaExpedition.ContextMenus;
 
 namespace IndianaExpedition
 {
@@ -59,7 +60,7 @@ namespace IndianaExpedition
         private void ConfigureCoreWebView(CoreWebView2 core)
         {
             core.Settings.AreDevToolsEnabled = false;
-            core.Settings.AreDefaultContextMenusEnabled = false;
+            core.Settings.AreDefaultContextMenusEnabled = true;
             core.Settings.AreBrowserAcceleratorKeysEnabled = false;
             core.Settings.IsStatusBarEnabled = false;
             core.Settings.IsZoomControlEnabled = false;
@@ -175,63 +176,12 @@ namespace IndianaExpedition
 
         private void OnDownloadStarting(object sender, CoreWebView2DownloadStartingEventArgs args)
         {
-            try
-            {
-                var directory = _services.Settings.Current.DownloadDirectory;
-                Directory.CreateDirectory(directory);
-                var fileName = Path.GetFileName(args.ResultFilePath);
-                if (string.IsNullOrWhiteSpace(fileName))
-                {
-                    fileName = BrowserUiConstants.DefaultDownloadFileName;
-                }
-
-                args.ResultFilePath = CreateUniqueDownloadPath(directory, fileName);
-                var operation = args.DownloadOperation;
-                _statusLabel.Text = string.Format(
-                    CultureInfo.CurrentCulture,
-                    Strings.DownloadInProgressFormat,
-                    Path.GetFileName(args.ResultFilePath));
-                operation.StateChanged += (operationSender, eventArgs) =>
-                {
-                    if (IsDisposed)
-                    {
-                        return;
-                    }
-
-                    BeginInvoke(new Action(() => UpdateDownloadStatus(operation)));
-                };
-            }
-            catch (Exception ex)
-            {
-                args.Cancel = true;
-                MessageBox.Show(ex.Message, Branding.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            _application.Downloads.StartDownload(this, args);
         }
 
-        private void UpdateDownloadStatus(CoreWebView2DownloadOperation operation)
+        internal void SetDownloadStatus(string status)
         {
-            var name = Path.GetFileName(operation.ResultFilePath);
-            switch (operation.State)
-            {
-                case CoreWebView2DownloadState.Completed:
-                    _statusLabel.Text = string.Format(
-                        CultureInfo.CurrentCulture,
-                        Strings.DownloadCompletedFormat,
-                        name);
-                    break;
-                case CoreWebView2DownloadState.Interrupted:
-                    _statusLabel.Text = string.Format(
-                        CultureInfo.CurrentCulture,
-                        Strings.DownloadFailedFormat,
-                        name);
-                    break;
-                default:
-                    _statusLabel.Text = string.Format(
-                        CultureInfo.CurrentCulture,
-                        Strings.DownloadInProgressFormat,
-                        name);
-                    break;
-            }
+            _statusLabel.Text = status;
         }
 
         private async void OnProcessFailed(object sender, CoreWebView2ProcessFailedEventArgs args)
@@ -271,61 +221,31 @@ namespace IndianaExpedition
 
         private void OnPermissionRequested(object sender, CoreWebView2PermissionRequestedEventArgs args)
         {
-            var answer = MessageBox.Show(
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    Strings.PermissionRequestFormat,
-                    args.PermissionKind,
-                    args.Uri),
-                Branding.ProductName,
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-            args.State = answer == DialogResult.Yes
-                ? CoreWebView2PermissionState.Allow
-                : CoreWebView2PermissionState.Deny;
-            args.SavesInProfile = false;
+            _application.PermissionPrompts.Handle(this, args);
         }
 
         private void OnContextMenuRequested(object sender, CoreWebView2ContextMenuRequestedEventArgs args)
         {
-            args.Handled = true;
-            var menu = new ContextMenuStrip { Renderer = new Styling.XpToolStripRenderer() };
-
-            var back = menu.Items.Add(Strings.ContextBack, null, (s, e) => GoBack());
-            back.Enabled = CoreWebView?.CanGoBack == true;
-            var forward = menu.Items.Add(Strings.ContextForward, null, (s, e) => GoForward());
-            forward.Enabled = CoreWebView?.CanGoForward == true;
-            menu.Items.Add(Strings.ContextRefresh, null, (s, e) => RefreshPage());
-            menu.Items.Add(new ToolStripSeparator());
-
             var target = args.ContextMenuTarget;
-            if (target != null && target.HasLinkUri)
+            var model = new PageContextMenuModel(
+                target?.HasLinkUri == true ? target.LinkUri : null,
+                target?.HasSelection == true ? target.SelectionText : null);
+            var menu = CreatePageContextMenu(model);
+            var deferral = args.GetDeferral();
+            args.Handled = true;
+            var session = new WebViewContextMenuSession(
+                menu,
+                deferral);
+            try
             {
-                var link = target.LinkUri;
-                menu.Items.Add(Strings.ContextOpenLinkNewWindow, null, (s, e) => _application.OpenWindow(link));
-                menu.Items.Add(Strings.ContextCopyShortcut, null, (s, e) => Clipboard.SetText(link));
-                menu.Items.Add(new ToolStripSeparator());
+                ReplaceContextMenuSession(session);
+                session.Show(_webView, args.Location);
             }
-
-            var selectionText = target != null && target.HasSelection ? target.SelectionText : null;
-            var copy = menu.Items.Add(Strings.ContextCopy, null, (s, e) =>
+            catch
             {
-                if (!string.IsNullOrEmpty(selectionText))
-                {
-                    Clipboard.SetText(selectionText);
-                }
-            });
-            copy.Enabled = !string.IsNullOrEmpty(selectionText);
-            menu.Items.Add(Strings.ContextSelectAll, null, (s, e) =>
-                _ = CoreWebView?.ExecuteScriptAsync(string.Format(
-                    CultureInfo.InvariantCulture,
-                    BrowserScriptConstants.ExecuteCommandTemplate,
-                    BrowserScriptConstants.SelectAllCommand)));
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(new ToolStripMenuItem(Strings.ContextProperties) { Enabled = false });
-
-            menu.Closed += (s, e) => menu.Dispose();
-            menu.Show(_webView, args.Location);
+                args.Handled = false;
+                session.Dispose();
+            }
         }
 
         private void ShowBrowserInitializationError(Exception exception)
@@ -394,37 +314,6 @@ namespace IndianaExpedition
             {
                 _zoneLabel.Text = Strings.InternetZone;
             }
-        }
-
-        private static string CreateUniqueDownloadPath(string directory, string fileName)
-        {
-            var candidate = Path.Combine(directory, fileName);
-            if (!File.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            var name = Path.GetFileNameWithoutExtension(fileName);
-            var extension = Path.GetExtension(fileName);
-            for (var index = 1; index < BrowserUiConstants.MaximumDownloadNameAttempts; index++)
-            {
-                candidate = Path.Combine(
-                    directory,
-                    string.Format(
-                        CultureInfo.InvariantCulture,
-                        BrowserUiConstants.UniqueDownloadNameFormat,
-                        name,
-                        index,
-                        extension));
-                if (!File.Exists(candidate))
-                {
-                    return candidate;
-                }
-            }
-
-            return Path.Combine(
-                directory,
-                Guid.NewGuid().ToString(BrowserUiConstants.UniqueIdentifierFormat) + extension);
         }
 
         private static bool TryHandleUnsupportedNavigation(string target, out string externalTarget)

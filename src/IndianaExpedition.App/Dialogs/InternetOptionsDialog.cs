@@ -9,6 +9,7 @@ using IndianaExpedition.Core.Models;
 using IndianaExpedition.Core.Services;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
+using IndianaExpedition.Permissions;
 
 namespace IndianaExpedition
 {
@@ -20,22 +21,30 @@ namespace IndianaExpedition
         private readonly RadioButton _startHome;
         private readonly RadioButton _startLast;
         private readonly TextBox _downloadBox;
+        private readonly CheckBox _askWhereToSaveDownloads;
 
         internal InternetOptionsDialog(
             SettingsService settings,
-            string currentUrl)
+            string currentUrl,
+            ISitePermissionController permissionController = null,
+            bool showPrivacyTab = false,
+            bool preventActivationOnShow = false)
         {
             _settings = settings;
             _currentUrl = currentUrl;
             var current = settings.Current;
+
+            PreventActivationOnShow = preventActivationOnShow;
 
             Text = Strings.InternetOptionsTitle;
             SetContentClientSize(560, 490);
             LunaResizable = false;
             MaximizeBox = false;
             MinimizeBox = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
+            ShowInTaskbar = preventActivationOnShow;
+            StartPosition = preventActivationOnShow
+                ? FormStartPosition.CenterScreen
+                : FormStartPosition.CenterParent;
 
             var tabs = new TabControl { Location = new Point(12, 12), Size = new Size(536, 426) };
             var general = new TabPage(Strings.GeneralTab)
@@ -45,11 +54,21 @@ namespace IndianaExpedition
             };
             tabs.TabPages.Add(general);
             tabs.TabPages.Add(CreateUnavailableTab(Strings.SecurityTab));
-            tabs.TabPages.Add(CreateUnavailableTab(Strings.PrivacyTab));
+            var privacy = new TabPage(Strings.PrivacyTab)
+            {
+                BackColor = XpPalette.ControlFace,
+                UseVisualStyleBackColor = false
+            };
+            privacy.Controls.Add(new SitePermissionsPanel(permissionController));
+            tabs.TabPages.Add(privacy);
             tabs.TabPages.Add(CreateUnavailableTab(Strings.ContentTab));
             tabs.TabPages.Add(CreateUnavailableTab(Strings.ConnectionsTab));
             tabs.TabPages.Add(CreateUnavailableTab(Strings.ProgramsTab));
             tabs.TabPages.Add(CreateUnavailableTab(Strings.AdvancedTab));
+            if (showPrivacyTab)
+            {
+                tabs.SelectedTab = privacy;
+            }
 
             var homeGroup = new GroupBox { Text = Strings.HomePageGroup, Location = new Point(12, 12), Size = new Size(504, 112) };
             _homeBox = new TextBox { Text = current.HomeUrl, Location = new Point(16, 24), Size = new Size(470, 23) };
@@ -83,11 +102,18 @@ namespace IndianaExpedition
             clear.Click += (sender, args) => DeleteBrowsingDataRequested?.Invoke(this, EventArgs.Empty);
             historyGroup.Controls.Add(clear);
 
-            var downloadGroup = new GroupBox { Text = Strings.DownloadGroup, Location = new Point(12, 308), Size = new Size(504, 78) };
-            _downloadBox = new TextBox { Text = current.DownloadDirectory, Location = new Point(16, 32), Size = new Size(374, 23), ReadOnly = true };
-            var browse = new XpButton { Text = Strings.Browse, Location = new Point(398, 30), Size = new Size(88, 27) };
+            var downloadGroup = new GroupBox { Text = Strings.DownloadGroup, Location = new Point(12, 308), Size = new Size(504, 88) };
+            _downloadBox = new TextBox { Text = current.DownloadDirectory, Location = new Point(16, 27), Size = new Size(374, 23), ReadOnly = true };
+            var browse = new XpButton { Text = Strings.Browse, Location = new Point(398, 25), Size = new Size(88, 27) };
             browse.Click += (sender, args) => BrowseDownloadDirectory();
-            downloadGroup.Controls.AddRange(new Control[] { _downloadBox, browse });
+            _askWhereToSaveDownloads = new CheckBox
+            {
+                Text = Strings.AskWhereToSaveDownloads,
+                Checked = current.AskWhereToSaveDownloads,
+                AutoSize = true,
+                Location = new Point(16, 56)
+            };
+            downloadGroup.Controls.AddRange(new Control[] { _downloadBox, browse, _askWhereToSaveDownloads });
 
             general.Controls.AddRange(new Control[] { homeGroup, startupGroup, historyGroup, downloadGroup });
 
@@ -152,6 +178,7 @@ namespace IndianaExpedition
                 settings.HomeUrl = home;
                 settings.StartupMode = _startLast.Checked ? StartupMode.LastActivePage : StartupMode.Home;
                 settings.DownloadDirectory = _downloadBox.Text;
+                settings.AskWhereToSaveDownloads = _askWhereToSaveDownloads.Checked;
             });
         }
     }

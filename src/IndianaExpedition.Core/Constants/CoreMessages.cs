@@ -5,6 +5,7 @@ namespace IndianaExpedition.Core.Constants
         internal const string BaseDirectoryRequired = "A base directory is required.";
         internal const string ApplicationDirectoryNameRequired = "An application directory name is required.";
         internal const string StoragePathRequired = "A storage path is required.";
+        internal const string DownloadFilePathRequired = "A download file path is required.";
         internal const string AddressRequired = "주소 또는 검색어를 입력하세요.";
         internal const string OpenLocalFileFromMenu = "로컬 파일은 파일 > 열기 메뉴로 선택하세요.";
         internal const string UnsafeAddressBlocked = "안전을 위해 이 주소 형식은 차단되었습니다.";
