@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.Linq;
 using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Models;
+using IndianaExpedition.Core.Navigation;
 using IndianaExpedition.Core.Persistence;
 
 namespace IndianaExpedition.Core.Services
@@ -15,7 +17,13 @@ namespace IndianaExpedition.Core.Services
         public SettingsService(string path)
         {
             _store = new AtomicJsonFileStore<BrowserSettings>(path, BrowserSettings.CreateDefault);
-            _current = Normalize(_store.Load());
+            var loaded = _store.Load();
+            var saveNormalizedFeatures = RequiresFeatureSettingsSave(loaded);
+            _current = Normalize(loaded);
+            if (saveNormalizedFeatures)
+            {
+                _store.Save(_current);
+            }
         }
 
         public event EventHandler Changed;
@@ -53,6 +61,7 @@ namespace IndianaExpedition.Core.Services
         {
             var defaults = BrowserSettings.CreateDefault();
             var result = settings ?? defaults;
+            var sourceSchemaVersion = result.SchemaVersion;
 
             result.SchemaVersion = BrowserDefaults.DataSchemaVersion;
             result.UiCulture = string.IsNullOrWhiteSpace(result.UiCulture)
@@ -68,6 +77,18 @@ namespace IndianaExpedition.Core.Services
             if (!Enum.IsDefined(typeof(StartupMode), result.StartupMode))
             {
                 result.StartupMode = defaults.StartupMode;
+            }
+
+            if (sourceSchemaVersion < PopupPolicyConstants.PopupSettingsSchemaVersion)
+            {
+                result.PopupBlockerEnabled = defaults.PopupBlockerEnabled;
+                result.DefaultZoomLevel = defaults.DefaultZoomLevel;
+            }
+
+            result.AllowedPopupOrigins = PopupPolicy.NormalizeOrigins(result.AllowedPopupOrigins);
+            if (!Enum.IsDefined(typeof(BrowserZoomLevel), result.DefaultZoomLevel))
+            {
+                result.DefaultZoomLevel = defaults.DefaultZoomLevel;
             }
 
             if (string.IsNullOrWhiteSpace(result.DownloadDirectory))
@@ -102,6 +123,22 @@ namespace IndianaExpedition.Core.Services
             }
 
             return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
+        }
+
+        private static bool RequiresFeatureSettingsSave(BrowserSettings settings)
+        {
+            if (settings == null ||
+                settings.SchemaVersion != BrowserDefaults.DataSchemaVersion ||
+                !Enum.IsDefined(typeof(BrowserZoomLevel), settings.DefaultZoomLevel) ||
+                settings.AllowedPopupOrigins == null)
+            {
+                return true;
+            }
+
+            var normalizedOrigins = PopupPolicy.NormalizeOrigins(settings.AllowedPopupOrigins);
+            return !settings.AllowedPopupOrigins.SequenceEqual(
+                normalizedOrigins,
+                StringComparer.Ordinal);
         }
 
         private static bool IsValidSearchTemplate(string value)

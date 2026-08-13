@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using Microsoft.Win32;
@@ -10,6 +11,15 @@ namespace IndianaExpedition.Core.Models
     {
         Home = 0,
         LastActivePage = 1
+    }
+
+    public enum BrowserZoomLevel
+    {
+        Smallest = 0,
+        Smaller = 1,
+        Medium = 2,
+        Larger = 3,
+        Largest = 4
     }
 
     [DataContract]
@@ -39,6 +49,15 @@ namespace IndianaExpedition.Core.Models
         [DataMember(Order = 7)]
         public bool ShowStatusBar { get; set; }
 
+        [DataMember(Order = 8)]
+        public bool PopupBlockerEnabled { get; set; }
+
+        [DataMember(Order = 9)]
+        public List<string> AllowedPopupOrigins { get; set; }
+
+        [DataMember(Order = 10)]
+        public BrowserZoomLevel DefaultZoomLevel { get; set; }
+
         public static BrowserSettings CreateDefault()
         {
             return new BrowserSettings
@@ -50,7 +69,10 @@ namespace IndianaExpedition.Core.Models
                 StartupMode = StartupMode.Home,
                 DownloadDirectory = KnownFolders.GetDownloadsDirectory(),
                 ShowLinksBar = false,
-                ShowStatusBar = true
+                ShowStatusBar = true,
+                PopupBlockerEnabled = true,
+                AllowedPopupOrigins = new List<string>(),
+                DefaultZoomLevel = BrowserZoomLevel.Medium
             };
         }
 
@@ -65,7 +87,10 @@ namespace IndianaExpedition.Core.Models
                 StartupMode = StartupMode,
                 DownloadDirectory = DownloadDirectory,
                 ShowLinksBar = ShowLinksBar,
-                ShowStatusBar = ShowStatusBar
+                ShowStatusBar = ShowStatusBar,
+                PopupBlockerEnabled = PopupBlockerEnabled,
+                AllowedPopupOrigins = new List<string>(AllowedPopupOrigins ?? new List<string>()),
+                DefaultZoomLevel = DefaultZoomLevel
             };
         }
     }

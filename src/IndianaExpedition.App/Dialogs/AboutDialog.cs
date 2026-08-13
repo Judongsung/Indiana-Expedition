@@ -12,15 +12,18 @@ namespace IndianaExpedition
 {
     internal sealed class AboutDialog : LunaForm
     {
-        internal AboutDialog()
+        internal AboutDialog(bool preventActivationOnShow = false)
         {
+            PreventActivationOnShow = preventActivationOnShow;
             Text = string.Format(CultureInfo.CurrentCulture, Strings.AboutTitleFormat, Branding.ProductName);
             SetContentClientSize(500, 286);
             LunaResizable = false;
             MaximizeBox = false;
             MinimizeBox = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
+            ShowInTaskbar = preventActivationOnShow;
+            StartPosition = preventActivationOnShow
+                ? FormStartPosition.CenterScreen
+                : FormStartPosition.CenterParent;
 
             var logo = new PictureBox
             {
@@ -53,8 +56,21 @@ namespace IndianaExpedition
                 AutoSize = true,
                 Location = new Point(24, 206)
             };
-            reference.LinkClicked += (sender, args) =>
-                Process.Start(new ProcessStartInfo(ApplicationConstants.WebView2BrowserProjectUrl) { UseShellExecute = true });
+            reference.LinkClicked += (sender, args) => OpenUrl(ApplicationConstants.WebView2BrowserProjectUrl);
+
+            var repositoryLabel = new Label
+            {
+                Text = Strings.AboutRepository,
+                AutoSize = true,
+                Location = new Point(24, 180)
+            };
+            var repository = new LinkLabel
+            {
+                Text = ApplicationConstants.ProjectRepositoryUrl,
+                AutoSize = true,
+                Location = new Point(128, 180)
+            };
+            repository.LinkClicked += (sender, args) => OpenUrl(ApplicationConstants.ProjectRepositoryUrl);
 
             var ok = new XpButton
             {
@@ -63,9 +79,23 @@ namespace IndianaExpedition
                 Location = new Point(398, 242),
                 Size = new Size(78, 27)
             };
-            ContentPanel.Controls.AddRange(new Control[] { logo, name, description, reference, ok });
+            ContentPanel.Controls.AddRange(new Control[]
+            {
+                logo,
+                name,
+                description,
+                repositoryLabel,
+                repository,
+                reference,
+                ok
+            });
             AcceptButton = ok;
             CancelButton = ok;
+        }
+
+        private static void OpenUrl(string url)
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
 
         private static string SafeRuntimeVersion()

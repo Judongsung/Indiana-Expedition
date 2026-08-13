@@ -13,7 +13,16 @@ $ErrorActionPreference = "Stop"
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $captureScript = Join-Path $PSScriptRoot "capture-wgc.ps1"
-$visualStates = @("Main", "Favorites", "History")
+$visualStates = @(
+    "Main",
+    "Favorites",
+    "History",
+    "PopupBlocked",
+    "FindDialog",
+    "DeleteBrowsingDataDialog",
+    "HelpMenu",
+    "AboutDialog"
+)
 
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path $repositoryRoot "artifacts\wgc"

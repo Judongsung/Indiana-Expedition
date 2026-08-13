@@ -15,7 +15,6 @@ namespace IndianaExpedition
     internal sealed class InternetOptionsDialog : LunaForm
     {
         private readonly SettingsService _settings;
-        private readonly HistoryService _history;
         private readonly string _currentUrl;
         private readonly TextBox _homeBox;
         private readonly RadioButton _startHome;
@@ -24,11 +23,9 @@ namespace IndianaExpedition
 
         internal InternetOptionsDialog(
             SettingsService settings,
-            HistoryService history,
             string currentUrl)
         {
             _settings = settings;
-            _history = history;
             _currentUrl = currentUrl;
             var current = settings.Current;
 
@@ -82,14 +79,8 @@ namespace IndianaExpedition
                 AutoSize = true,
                 Location = new Point(16, 25)
             });
-            var clear = new XpButton { Text = Strings.ClearListButton, Location = new Point(368, 40), Size = new Size(118, 27) };
-            clear.Click += (sender, args) =>
-            {
-                if (MessageBox.Show(Strings.ClearHistoryConfirm, Branding.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    _history.Clear();
-                }
-            };
+            var clear = new XpButton { Text = Strings.DeleteBrowsingDataButton, Location = new Point(368, 40), Size = new Size(118, 27) };
+            clear.Click += (sender, args) => DeleteBrowsingDataRequested?.Invoke(this, EventArgs.Empty);
             historyGroup.Controls.Add(clear);
 
             var downloadGroup = new GroupBox { Text = Strings.DownloadGroup, Location = new Point(12, 308), Size = new Size(504, 78) };
@@ -108,6 +99,8 @@ namespace IndianaExpedition
             AcceptButton = ok;
             CancelButton = cancel;
         }
+
+        internal event EventHandler DeleteBrowsingDataRequested;
 
         private static TabPage CreateUnavailableTab(string title)
         {

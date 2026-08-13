@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Web.WebView2.Core;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Navigation;
@@ -165,24 +166,52 @@ namespace IndianaExpedition
             }
         }
 
-        private void ClearHistory()
+        private void ShowDeleteBrowsingDataDialog()
         {
-            var answer = MessageBox.Show(
-                Strings.ClearHistoryConfirm,
-                Branding.ProductName,
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-            if (answer == DialogResult.Yes)
+            using (var dialog = new DeleteBrowsingDataDialog(
+                       DeleteBrowsingDataAsync,
+                       CoreWebView?.Profile != null))
             {
-                _services.History.Clear();
-                _statusLabel.Text = Strings.ClearHistoryStatus;
+                dialog.ShowDialog(this);
             }
+        }
+
+        private async Task DeleteBrowsingDataAsync(BrowsingDataSelection selection)
+        {
+            var profile = CoreWebView?.Profile;
+            var kinds = BrowsingDataMapper.ToWebViewKinds(selection);
+            var profileCleared = false;
+            if (profile != null && kinds != (CoreWebView2BrowsingDataKinds)0)
+            {
+                await profile.ClearBrowsingDataAsync(kinds).ConfigureAwait(true);
+                profileCleared = true;
+            }
+
+            if (selection.HasFlag(BrowsingDataSelection.History))
+            {
+                try
+                {
+                    _services.History.Clear();
+                }
+                catch (Exception ex) when (profileCleared)
+                {
+                    throw new InvalidOperationException(
+                        string.Format(
+                            CultureInfo.CurrentCulture,
+                            Strings.BrowsingDataPartialFailureFormat,
+                            ex.Message),
+                        ex);
+                }
+            }
+
+            _statusLabel.Text = Strings.BrowsingDataDeleted;
         }
 
         private void ShowInternetOptionsDialog()
         {
-            using (var dialog = new InternetOptionsDialog(_services.Settings, _services.History, CoreWebView?.Source))
+            using (var dialog = new InternetOptionsDialog(_services.Settings, CoreWebView?.Source))
             {
+                dialog.DeleteBrowsingDataRequested += (sender, args) => ShowDeleteBrowsingDataDialog();
                 dialog.ShowDialog(this);
             }
         }

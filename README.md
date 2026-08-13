@@ -6,7 +6,7 @@ Indiana Expedition은 Windows XP SP2의 Internet Explorer 6 사용 경험을 현
 
 ## 프로젝트 상태
 
-현재 버전 `0.1.0`은 기능과 UI를 검증하는 프리뷰입니다. 배포용 실행 파일에는 아직 코드 서명이 적용되지 않아 Windows가 SmartScreen 경고를 표시할 수 있습니다. 소스 코드를 직접 빌드하거나 이 저장소의 공식 Releases에서 받은 파일만 사용하는 것을 권장합니다.
+현재 버전 `0.2.0`은 기능과 UI를 검증하는 프리뷰입니다. 배포용 실행 파일에는 아직 코드 서명이 적용되지 않아 Windows가 SmartScreen 경고를 표시할 수 있습니다. 소스 코드를 직접 빌드하거나 이 저장소의 공식 Releases에서 받은 파일만 사용하는 것을 권장합니다.
 
 ## WebView2를 선택한 이유
 
@@ -24,8 +24,12 @@ Indiana Expedition은 브라우저 렌더링 엔진을 자체적으로 포크하
 - 주소 자동 보완과 Google 검색
 - 뒤로, 앞으로, 중지, 새로 고침, 홈 및 전체 화면
 - WebView2 프로필을 공유하는 탭 없는 다중 창
+- Windows XP SP2식 자동 팝업 차단, 노란 정보 표시줄 및 사이트별 허용 목록
+- Luna 모달 페이지 찾기와 시스템 인쇄
+- 앱 전체에 즉시 적용되고 다음 실행에도 유지되는 67%·80%·100%·125%·150% 확대 단계
 - 폴더를 지원하는 즐겨찾기 추가·구성·이동·삭제
 - 30일 또는 최대 2,000개 방문 기록과 날짜별 탐색창
+- 방문 기록, 다운로드 기록, 캐시, 쿠키, 사이트 저장소, 자동 완성 및 암호를 선택하는 검색 기록 삭제
 - 홈페이지와 시작 방식, 다운로드 폴더를 설정하는 인터넷 옵션
 - 다운로드 폴더 자동 저장과 파일명 충돌 처리
 - IE6풍 페이지 우클릭 메뉴와 사이트 권한 확인
@@ -45,6 +49,8 @@ Luna 창 크롬은 `LunaMetrics`와 `XpPalette`를 조정 지점으로 사용합
 - .NET Framework 4.8 Runtime
 - Microsoft Edge WebView2 Evergreen Runtime
 
+페이지 찾기 API 사용을 위해 WebView2 Evergreen Runtime `139.0.3405.78` 이상이 필요합니다. Runtime이 없거나 이보다 오래된 경우 앱이 설치 또는 업데이트 안내를 구분해 표시합니다. 최소 버전은 Microsoft의 [WebView2 1.0.3405.78 릴리스 안내](https://learn.microsoft.com/microsoft-edge/webview2/release-notes/)를 기준으로 합니다.
+
 저장소는 `Microsoft.NETFramework.ReferenceAssemblies.net48` 패키지를 사용하므로 별도의 4.8 Targeting Pack이 없는 환경에서도 CLI 빌드할 수 있습니다. WebView2 Runtime은 앱 실행에 필요하며 [Microsoft 공식 페이지](https://developer.microsoft.com/microsoft-edge/webview2/)에서 받을 수 있습니다.
 
 ```powershell
@@ -62,7 +68,7 @@ dotnet build IndianaExpedition.sln -c Release
 
 ## 비간섭 화면 테스트
 
-Windows Graphics Capture로 메인 화면, 즐겨찾기 및 기록 사이드바를 실제 PNG로 캡처할 수 있습니다. 테스트 창은 포커스를 얻지 않고 뒤쪽에서 실행되며 WGC가 실패해도 `PrintWindow` 같은 방식으로 우회하지 않습니다.
+Windows Graphics Capture로 메인 화면, 즐겨찾기, 기록, 팝업 차단 표시줄, 찾기 창, 검색 기록 삭제 창, 열린 도움말 메뉴 및 정보 창을 실제 PNG로 캡처할 수 있습니다. 테스트 창은 포커스를 얻지 않고 뒤쪽에서 실행되며 WGC가 실패해도 `PrintWindow` 같은 방식으로 우회하지 않습니다. 준비 파일에는 앱이 직접 만든 캡처 대상 HWND가 기록되고, 스크립트가 실행 프로세스 소유인지 검증한 뒤 캡처합니다.
 
 ```powershell
 .\scripts\test-visual.ps1
@@ -88,12 +94,18 @@ WGC 캡처 도구는 저장소 안에서 화면 테스트를 빌드·실행하�
 
 JSON 저장은 임시 파일 교체 방식이며 이전 파일은 `.bak`으로 남습니다. 읽을 수 없는 파일은 `.corrupt-날짜.bak`으로 보존한 후 기본값으로 복구합니다.
 
+검색 기록 삭제의 기본 선택은 방문 기록, 다운로드 기록, 디스크 캐시, 쿠키 및 사이트 저장소입니다. 자동 완성 데이터와 저장된 암호는 기본 선택되지 않습니다. 다운로드 기록을 지워도 다운로드한 파일 자체는 삭제되지 않으며, 쿠키를 지우면 사이트에서 로그아웃될 수 있습니다. 열린 페이지는 자동으로 새로 고치지 않으므로 쿠키·사이트 데이터 변경은 다음 요청 또는 새로 고침부터 반영됩니다.
+
 ## 주요 단축키
 
 | 키 | 동작 |
 |---|---|
 | `Ctrl+L` | 주소 표시줄 선택 |
 | `Ctrl+N` | 새 창 |
+| `Ctrl+F` | 이 페이지에서 찾기 |
+| `F3`, `Shift+F3` | 다음 / 이전 찾기 결과 |
+| `Ctrl+P` | 시스템 인쇄 |
+| `Ctrl++`, `Ctrl+-`, `Ctrl+0` | 페이지 확대 / 축소 / 100% 복원 |
 | `Ctrl+D` | 현재 페이지를 즐겨찾기에 추가 |
 | `Ctrl+I` | 즐겨찾기 탐색창 |
 | `Ctrl+H` | 방문 기록 탐색창 |

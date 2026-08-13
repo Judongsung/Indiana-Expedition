@@ -175,7 +175,8 @@ namespace IndianaExpedition.Styling
 
         protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
         {
-            var pressed = e.Item is ToolStripMenuItem item && item.DropDown.Visible;
+            var pressed = e.Item is ToolStripMenuItem item &&
+                          (item.Pressed || item.DropDown.Visible);
             if (e.Item.Selected || pressed)
             {
                 var bounds = new Rectangle(1, 1, e.Item.Width - 3, e.Item.Height - 3);

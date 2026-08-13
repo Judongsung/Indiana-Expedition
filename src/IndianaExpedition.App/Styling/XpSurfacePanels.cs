@@ -50,6 +50,31 @@ namespace IndianaExpedition.Styling
         }
     }
 
+    internal sealed class XpInformationBarPanel : Panel
+    {
+        internal XpInformationBarPanel()
+        {
+            BackColor = XpPalette.InformationBarFace;
+            SetStyle(
+                ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.OptimizedDoubleBuffer |
+                ControlStyles.ResizeRedraw |
+                ControlStyles.UserPaint,
+                true);
+        }
+
+        protected override void OnPaintBackground(PaintEventArgs args)
+        {
+            args.Graphics.Clear(XpPalette.InformationBarFace);
+            using (var top = new Pen(XpPalette.ControlLightLight))
+            using (var bottom = new Pen(XpPalette.InformationBarBorder))
+            {
+                args.Graphics.DrawLine(top, 0, 0, Width, 0);
+                args.Graphics.DrawLine(bottom, 0, Height - 1, Width, Height - 1);
+            }
+        }
+    }
+
     internal sealed class XpExplorerHeaderPanel : Panel
     {
         internal XpExplorerHeaderPanel()

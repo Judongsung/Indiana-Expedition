@@ -79,9 +79,11 @@
   <data name="FavoritesTitle" xml:space="preserve"><value>즐겨찾기</value></data>
   <data name="HistoryTitle" xml:space="preserve"><value>열어본 페이지 목록</value></data>
   <data name="Loading" xml:space="preserve"><value>페이지를 여는 중...</value></data>
-  <data name="RuntimeMissingTitle" xml:space="preserve"><value>WebView2 Runtime 필요</value></data>
-  <data name="RuntimeMissingMessage" xml:space="preserve"><value>Indiana Expedition를 실행하려면 Microsoft Edge WebView2 Runtime이 필요합니다.</value></data>
-  <data name="RuntimeDownload" xml:space="preserve"><value>WebView2 Runtime 다운로드</value></data>
+  <data name="RuntimeMissingTitle" xml:space="preserve"><value>WebView2 Runtime 설치 필요</value></data>
+  <data name="RuntimeMissingMessageFormat" xml:space="preserve"><value>Indiana Expedition를 실행하려면 Microsoft Edge WebView2 Runtime {0} 이상을 설치해야 합니다.</value></data>
+  <data name="RuntimeUpdateTitle" xml:space="preserve"><value>WebView2 Runtime 업데이트 필요</value></data>
+  <data name="RuntimeUpdateMessageFormat" xml:space="preserve"><value>설치된 WebView2 Runtime({0})이 너무 오래되었습니다. Indiana Expedition에는 {1} 이상이 필요합니다.</value></data>
+  <data name="RuntimeDownload" xml:space="preserve"><value>WebView2 Runtime 설치 또는 업데이트</value></data>
   <data name="Ok" xml:space="preserve"><value>확인</value></data>
   <data name="Cancel" xml:space="preserve"><value>취소</value></data>
   <data name="Apply" xml:space="preserve"><value>적용</value></data>
@@ -96,8 +98,6 @@
   <data name="LinkWebView2" xml:space="preserve"><value>Microsoft WebView2</value></data>
   <data name="ExternalProtocolPromptFormat" xml:space="preserve"><value>이 링크를 다른 프로그램에서 여시겠습니까?&#xA;&#xA;{0}</value></data>
   <data name="NoPageToFavorite" xml:space="preserve"><value>즐겨찾기에 추가할 페이지가 없습니다.</value></data>
-  <data name="ClearHistoryConfirm" xml:space="preserve"><value>저장된 방문 기록을 모두 삭제하시겠습니까?</value></data>
-  <data name="ClearHistoryStatus" xml:space="preserve"><value>방문 기록을 삭제했습니다.</value></data>
   <data name="HistoryToday" xml:space="preserve"><value>오늘</value></data>
   <data name="HistoryYesterday" xml:space="preserve"><value>어제</value></data>
   <data name="HistoryEntryFormat" xml:space="preserve"><value>{0}  ({1})</value></data>
@@ -159,7 +159,6 @@
   <data name="StartLast" xml:space="preserve"><value>마지막으로 사용한 페이지에서 시작</value></data>
   <data name="HistoryGroup" xml:space="preserve"><value>열어본 페이지 목록</value></data>
   <data name="HistoryRetentionFormat" xml:space="preserve"><value>페이지는 {0}일 동안, 최대 {1:N0}개까지 보관됩니다.</value></data>
-  <data name="ClearListButton" xml:space="preserve"><value>목록 지우기(&amp;C)</value></data>
   <data name="DownloadGroup" xml:space="preserve"><value>다운로드</value></data>
   <data name="UnavailableSetting" xml:space="preserve"><value>이 설정은 Indiana Expedition의 다음 버전에서 제공될 예정입니다.</value></data>
   <data name="DownloadFolderDescription" xml:space="preserve"><value>다운로드 파일을 저장할 폴더를 선택하세요.</value></data>
@@ -167,5 +166,57 @@
   <data name="AboutTitleFormat" xml:space="preserve"><value>{0} 정보</value></data>
   <data name="AboutDescriptionFormat" xml:space="preserve"><value>Windows XP SP2의 Internet Explorer 6 사용 경험을&#xA;현대 WebView2 위에 재구성한 개인용 브라우저입니다.&#xA;&#xA;앱 버전: {0}&#xA;WebView2 Runtime: {1}</value></data>
   <data name="AboutReference" xml:space="preserve"><value>MicrosoftEdge/WebView2Browser 샘플 참고</value></data>
+  <data name="AboutRepository" xml:space="preserve"><value>GitHub 리포지토리:</value></data>
   <data name="RuntimeVersionUnavailable" xml:space="preserve"><value>확인할 수 없음</value></data>
+  <data name="PopupBlockerEnabled" xml:space="preserve"><value>팝업 차단 사용(&amp;B)</value></data>
+  <data name="PopupBlockerSettings" xml:space="preserve"><value>팝업 차단 설정(&amp;P)...</value></data>
+  <data name="PopupBlockedFormat" xml:space="preserve"><value>이 페이지에서 팝업 {0}개를 차단했습니다.</value></data>
+  <data name="OpenBlockedPopup" xml:space="preserve"><value>차단된 팝업 열기</value></data>
+  <data name="AlwaysAllowPopupSite" xml:space="preserve"><value>이 사이트의 팝업 항상 허용</value></data>
+  <data name="PopupSettingsTitle" xml:space="preserve"><value>팝업 차단 설정</value></data>
+  <data name="AllowedPopupSites" xml:space="preserve"><value>팝업을 허용할 웹 사이트</value></data>
+  <data name="WebsiteAddress" xml:space="preserve"><value>허용할 웹 사이트 주소(&amp;W):</value></data>
+  <data name="AddSite" xml:space="preserve"><value>추가(&amp;A)</value></data>
+  <data name="Remove" xml:space="preserve"><value>제거(&amp;R)</value></data>
+  <data name="RemoveAll" xml:space="preserve"><value>모두 제거(&amp;M)</value></data>
+  <data name="InvalidPopupOrigin" xml:space="preserve"><value>HTTP 또는 HTTPS 웹 사이트 주소를 입력하세요.</value></data>
+  <data name="PopupOriginLimitFormat" xml:space="preserve"><value>허용 사이트는 최대 {0}개까지 저장할 수 있습니다.</value></data>
+  <data name="PopupBlockedStatus" xml:space="preserve"><value>자동 팝업을 차단했습니다.</value></data>
+  <data name="FindDialogTitle" xml:space="preserve"><value>찾기</value></data>
+  <data name="FindWhat" xml:space="preserve"><value>찾을 내용(&amp;N):</value></data>
+  <data name="FindNext" xml:space="preserve"><value>다음 찾기(&amp;F)</value></data>
+  <data name="FindDirection" xml:space="preserve"><value>방향</value></data>
+  <data name="FindOptions" xml:space="preserve"><value>찾기 옵션</value></data>
+  <data name="FindUp" xml:space="preserve"><value>위로(&amp;U)</value></data>
+  <data name="FindDown" xml:space="preserve"><value>아래로(&amp;D)</value></data>
+  <data name="FindMatchCase" xml:space="preserve"><value>대/소문자 구분(&amp;C)</value></data>
+  <data name="FindWholeWord" xml:space="preserve"><value>단어 단위로(&amp;W)</value></data>
+  <data name="FindResultFormat" xml:space="preserve"><value>{1}개 중 {0}</value></data>
+  <data name="FindNoResults" xml:space="preserve"><value>일치하는 항목이 없습니다.</value></data>
+  <data name="FindReady" xml:space="preserve"><value>찾을 내용을 입력하세요.</value></data>
+  <data name="FindUnavailable" xml:space="preserve"><value>현재 페이지에서는 찾기를 사용할 수 없습니다.</value></data>
+  <data name="TextSizeLargest" xml:space="preserve"><value>가장 크게(&amp;G)</value></data>
+  <data name="TextSizeLarger" xml:space="preserve"><value>크게(&amp;L)</value></data>
+  <data name="TextSizeMedium" xml:space="preserve"><value>보통(&amp;M)</value></data>
+  <data name="TextSizeSmaller" xml:space="preserve"><value>작게(&amp;S)</value></data>
+  <data name="TextSizeSmallest" xml:space="preserve"><value>가장 작게(&amp;A)</value></data>
+  <data name="ZoomStatusFormat" xml:space="preserve"><value>페이지 크기: {0}%</value></data>
+  <data name="PrintUnavailable" xml:space="preserve"><value>현재 페이지에서는 인쇄를 사용할 수 없습니다.</value></data>
+  <data name="DeleteBrowsingDataTitle" xml:space="preserve"><value>검색 기록 삭제</value></data>
+  <data name="DeleteBrowsingDataIntro" xml:space="preserve"><value>삭제할 항목을 선택하십시오. 변경 내용은 열려 있는 모든 Indiana Expedition 창에 적용됩니다.</value></data>
+  <data name="BrowsingHistoryItem" xml:space="preserve"><value>방문 기록</value></data>
+  <data name="DownloadHistoryItem" xml:space="preserve"><value>다운로드 기록</value></data>
+  <data name="DiskCacheItem" xml:space="preserve"><value>임시 인터넷 파일 및 캐시</value></data>
+  <data name="CookiesItem" xml:space="preserve"><value>쿠키</value></data>
+  <data name="SiteStorageItem" xml:space="preserve"><value>웹 사이트 저장소</value></data>
+  <data name="AutofillItem" xml:space="preserve"><value>자동 완성 데이터</value></data>
+  <data name="SavedPasswordsItem" xml:space="preserve"><value>저장된 암호</value></data>
+  <data name="DeleteBrowsingDataWarning" xml:space="preserve"><value>쿠키를 삭제하면 웹 사이트에서 로그아웃될 수 있습니다. 다운로드한 파일 자체는 삭제되지 않습니다.</value></data>
+  <data name="DeletingBrowsingData" xml:space="preserve"><value>선택한 검색 기록을 삭제하는 중입니다. 잠시 기다려 주십시오...</value></data>
+  <data name="ProfileDataUnavailable" xml:space="preserve"><value>WebView2가 준비되지 않아 프로필 항목은 삭제할 수 없습니다. 앱 방문 기록만 삭제할 수 있습니다.</value></data>
+  <data name="DeleteSelected" xml:space="preserve"><value>삭제(&amp;D)</value></data>
+  <data name="BrowsingDataDeleted" xml:space="preserve"><value>선택한 검색 기록을 삭제했습니다.</value></data>
+  <data name="BrowsingDataDeleteFailedFormat" xml:space="preserve"><value>브라우저 데이터를 삭제하지 못했습니다.&#xA;&#xA;{0}</value></data>
+  <data name="BrowsingDataPartialFailureFormat" xml:space="preserve"><value>WebView2 데이터는 삭제했지만 앱 방문 기록을 삭제하지 못했습니다.&#xA;&#xA;{0}</value></data>
+  <data name="DeleteBrowsingDataButton" xml:space="preserve"><value>삭제(&amp;D)...</value></data>
 </root>

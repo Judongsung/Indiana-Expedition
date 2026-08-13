@@ -29,6 +29,11 @@ namespace IndianaExpedition.Constants
         internal static readonly Color ExplorerHeaderText = Color.White;
         internal static readonly Color ExplorerHeaderTextShadow = Color.FromArgb(105, 0, 38, 112);
         internal static readonly Color ExplorerBody = Color.FromArgb(214, 223, 247);
+        internal static readonly Color InformationBarFace = Color.FromArgb(255, 255, 225);
+        internal static readonly Color InformationBarBorder = Color.FromArgb(208, 190, 116);
+        internal static readonly Color InformationBarText = Color.FromArgb(30, 30, 30);
+        internal static readonly Color InformationBarIconFace = Color.FromArgb(255, 202, 38);
+        internal static readonly Color InformationBarIconBorder = Color.FromArgb(156, 105, 0);
         internal static readonly Color LunaFrameLeftOuter = Color.FromArgb(0, 25, 207);
         internal static readonly Color LunaFrameLeftBase = Color.FromArgb(8, 49, 217);
         internal static readonly Color LunaFrameLeftHighlight = Color.FromArgb(22, 106, 238);

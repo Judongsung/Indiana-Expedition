@@ -2,9 +2,13 @@ namespace IndianaExpedition.Constants
 {
     internal static class ApplicationConstants
     {
+        internal const int WindowMessageKeyDown = 0x0100;
+        internal const int WindowMessageSystemKeyDown = 0x0104;
         internal const string DataDirectoryName = "IndianaExpedition";
         internal const string WebView2BrowserProjectUrl =
             "https://github.com/MicrosoftEdge/WebView2Browser";
+        internal const string ProjectRepositoryUrl =
+            "https://github.com/Judongsung/Indiana-Expedition";
         internal const string WebView2DownloadUrl =
             "https://developer.microsoft.com/microsoft-edge/webview2/";
         internal const string WindowTitleSeparator = " - ";
@@ -38,5 +42,14 @@ namespace IndianaExpedition.Constants
         internal const string CopyCommand = "copy";
         internal const string PasteCommand = "paste";
         internal const string SelectAllCommand = "selectAll";
+    }
+
+    internal static class VisualTestConstants
+    {
+        internal const string PopupSourceOrigin = "https://example.com";
+        internal const string PopupTargetUrl = "https://example.com/popup";
+        internal const string FindTerm = "Windows XP";
+        internal const int FindActiveMatchIndex = 2;
+        internal const int FindMatchCount = 5;
     }
 }

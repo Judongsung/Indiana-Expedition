@@ -202,7 +202,7 @@ internal static partial class WgcCapture
                 .ConvertToManaged((void*)interopPointer)!;
             interopPointer = IntPtr.Zero;
             interop.CreateForWindow(
-                windowHandle,
+                (IntPtr)windowHandle,
                 in InteropIds.GraphicsCaptureItem,
                 out itemPointer).ThrowIfFailed("GraphicsCaptureItem.CreateForWindow");
 
@@ -347,8 +347,9 @@ internal static partial class WgcCapture
     [Guid("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356")]
     internal partial interface IGraphicsCaptureItemInterop
     {
+        // The generated COM ABI needs the native HWND value, not CsWin32's custom-marshalled wrapper.
         [PreserveSig]
-        int CreateForWindow(HWND window, in Guid interfaceId, out IntPtr result);
+        int CreateForWindow(IntPtr window, in Guid interfaceId, out IntPtr result);
 
         [PreserveSig]
         int CreateForMonitor(IntPtr monitor, in Guid interfaceId, out IntPtr result);

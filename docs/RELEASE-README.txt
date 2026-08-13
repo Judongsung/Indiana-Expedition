@@ -1,4 +1,4 @@
-Indiana Expedition 0.1.0
+Indiana Expedition 0.2.0
 ============
 
 프리뷰 및 코드 서명 안내
@@ -9,14 +9,33 @@ Indiana Expedition 0.1.0
 
 1. IndianaExpedition.exe를 실행합니다.
 2. 실행되지 않고 WebView2 안내가 표시되면 다음 공식 페이지에서
-   Microsoft Edge WebView2 Evergreen Runtime을 설치합니다.
+   Microsoft Edge WebView2 Evergreen Runtime을 설치하거나 업데이트합니다.
    https://developer.microsoft.com/microsoft-edge/webview2/
 
 요구 사항
 ---------
 - Windows 10/11 x64
 - .NET Framework 4.8 Runtime
-- Microsoft Edge WebView2 Evergreen Runtime
+- Microsoft Edge WebView2 Evergreen Runtime 139.0.3405.78 이상
+
+0.2 주요 기능
+------------
+- Windows XP SP2식 팝업 차단과 사이트별 허용 목록
+- 페이지 찾기, 시스템 인쇄, 앱 전체 5단계 확대/축소
+- 항목을 선택할 수 있는 검색 기록 삭제
+
+검색 기록 삭제
+-------------
+기본 선택은 방문 기록, 다운로드 기록, 캐시, 쿠키, 사이트 저장소입니다.
+자동 완성과 저장된 암호는 기본 선택되지 않습니다. 다운로드 기록을 삭제해도
+다운로드 파일 자체는 지우지 않으며, 쿠키 삭제 시 사이트에서 로그아웃될 수 있습니다.
+
+주요 단축키
+----------
+- Ctrl+F: 페이지 찾기
+- F3 / Shift+F3: 다음 / 이전 찾기 결과
+- Ctrl+P: 시스템 인쇄
+- Ctrl++ / Ctrl+- / Ctrl+0: 확대 / 축소 / 100% 복원
 
 WebView2 사용 이유
 -----------------

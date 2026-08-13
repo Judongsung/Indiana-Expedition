@@ -12,9 +12,29 @@ namespace IndianaExpedition
 {
     internal sealed partial class BrowserForm
     {
+        private void ToggleExplorerSidebar(ExplorerMode mode)
+        {
+            if (_explorerMode == mode && !_contentSplit.Panel1Collapsed)
+            {
+                HideExplorerSidebar();
+                return;
+            }
+
+            switch (mode)
+            {
+                case ExplorerMode.Favorites:
+                    ShowFavoritesSidebar();
+                    break;
+                case ExplorerMode.History:
+                    ShowHistorySidebar();
+                    break;
+            }
+        }
+
         private void ShowFavoritesSidebar()
         {
             _explorerMode = ExplorerMode.Favorites;
+            UpdateExplorerButtonStates();
             _explorerTitle.Text = Strings.FavoritesTitle;
             _contentSplit.Panel1Collapsed = false;
             if (_contentSplit.Width > 500)
@@ -27,6 +47,7 @@ namespace IndianaExpedition
         private void ShowHistorySidebar()
         {
             _explorerMode = ExplorerMode.History;
+            UpdateExplorerButtonStates();
             _explorerTitle.Text = Strings.HistoryTitle;
             _contentSplit.Panel1Collapsed = false;
             if (_contentSplit.Width > 500)
@@ -39,8 +60,22 @@ namespace IndianaExpedition
         private void HideExplorerSidebar()
         {
             _explorerMode = ExplorerMode.None;
+            UpdateExplorerButtonStates();
             _contentSplit.Panel1Collapsed = true;
             _explorerTree.Nodes.Clear();
+        }
+
+        private void UpdateExplorerButtonStates()
+        {
+            if (_favoritesButton != null)
+            {
+                _favoritesButton.Checked = _explorerMode == ExplorerMode.Favorites;
+            }
+
+            if (_historyButton != null)
+            {
+                _historyButton.Checked = _explorerMode == ExplorerMode.History;
+            }
         }
 
         private void PopulateFavoritesTree()

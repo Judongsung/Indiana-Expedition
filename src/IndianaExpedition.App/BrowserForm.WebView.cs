@@ -37,6 +37,7 @@ namespace IndianaExpedition
                 var environment = await _application.EnvironmentTask.ConfigureAwait(true);
                 await candidate.EnsureCoreWebView2Async(environment).ConfigureAwait(true);
                 ConfigureCoreWebView(candidate.CoreWebView2);
+                AttachWebViewFeatures(candidate);
                 _browserReady = true;
 
                 var target = string.IsNullOrWhiteSpace(_recoveryUrl) ? _initialUrl : _recoveryUrl;
@@ -45,6 +46,7 @@ namespace IndianaExpedition
             }
             catch
             {
+                DetachWebViewFeatures(candidate);
                 candidate.Dispose();
                 if (ReferenceEquals(_webView, candidate))
                 {
@@ -60,7 +62,7 @@ namespace IndianaExpedition
             core.Settings.AreDefaultContextMenusEnabled = false;
             core.Settings.AreBrowserAcceleratorKeysEnabled = false;
             core.Settings.IsStatusBarEnabled = false;
-            core.Settings.IsZoomControlEnabled = true;
+            core.Settings.IsZoomControlEnabled = false;
 
             core.NavigationStarting += OnNavigationStarting;
             core.NavigationCompleted += OnNavigationCompleted;
@@ -77,6 +79,7 @@ namespace IndianaExpedition
 
         private void OnNavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs args)
         {
+            _pageFindController?.ResetSession();
             if (TryHandleUnsupportedNavigation(args.Uri, out var externalTarget))
             {
                 args.Cancel = true;
@@ -160,7 +163,14 @@ namespace IndianaExpedition
 
         private async void OnNewWindowRequested(object sender, CoreWebView2NewWindowRequestedEventArgs args)
         {
-            await _application.AttachPopupAsync(args).ConfigureAwait(true);
+            if (ShouldAllowPopup(args, out var sourceOrigin))
+            {
+                await _application.AttachPopupAsync(args).ConfigureAwait(true);
+                return;
+            }
+
+            args.Handled = true;
+            EnqueueBlockedPopup(sourceOrigin, args.Uri);
         }
 
         private void OnDownloadStarting(object sender, CoreWebView2DownloadStartingEventArgs args)
@@ -242,6 +252,7 @@ namespace IndianaExpedition
                 _initializeTask = null;
                 if (old != null)
                 {
+                    DetachWebViewFeatures(old);
                     _browserHost.Controls.Remove(old);
                     old.Dispose();
                 }

@@ -29,7 +29,10 @@ namespace IndianaExpedition
                 var paths = CreateAppDataPaths(launchOptions);
                 var services = new BrowserApplicationServices(paths);
                 ApplyCulture(services.Settings.Current.UiCulture);
-                CoreWebView2Environment.GetAvailableBrowserVersionString();
+                if (!EnsureWebView2Runtime())
+                {
+                    return;
+                }
 
                 using (var context = new BrowserApplicationContext(services, launchOptions))
                 {
@@ -45,25 +48,53 @@ namespace IndianaExpedition
                     return;
                 }
 
-                try
-                {
-                    CoreWebView2Environment.GetAvailableBrowserVersionString();
-                }
-                catch
-                {
-                    using (var dialog = new RuntimeMissingDialog())
-                    {
-                        dialog.ShowDialog();
-                    }
-                    return;
-                }
-
                 MessageBox.Show(
                     ex.Message,
                     Branding.ProductName,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
+        }
+
+        private static bool EnsureWebView2Runtime()
+        {
+            string detectedVersion;
+            RuntimeRequirementState failureState;
+            try
+            {
+                detectedVersion = CoreWebView2Environment.GetAvailableBrowserVersionString();
+                if (CoreWebView2Environment.CompareBrowserVersions(
+                        detectedVersion,
+                        WebViewRuntimeConstants.MinimumVersion) >= 0)
+                {
+                    return true;
+                }
+
+                failureState = RuntimeRequirementState.UpdateRequired;
+            }
+            catch (Exception ex)
+            {
+                detectedVersion = null;
+                failureState = RuntimeRequirementState.InstallRequired;
+                Trace.TraceError(ex.ToString());
+            }
+
+            if (_visualTestMode)
+            {
+                Trace.TraceError(
+                    "WebView2 Runtime requirement failed. State={0}, Detected={1}, Minimum={2}",
+                    failureState,
+                    detectedVersion ?? string.Empty,
+                    WebViewRuntimeConstants.MinimumVersion);
+                Environment.ExitCode = 1;
+                return false;
+            }
+
+            using (var dialog = new RuntimeMissingDialog(failureState, detectedVersion))
+            {
+                dialog.ShowDialog();
+            }
+            return false;
         }
 
         private static AppDataPaths CreateAppDataPaths(ApplicationLaunchOptions launchOptions)

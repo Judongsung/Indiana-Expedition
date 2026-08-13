@@ -7,7 +7,12 @@ namespace IndianaExpedition
     {
         Main,
         Favorites,
-        History
+        History,
+        PopupBlocked,
+        FindDialog,
+        DeleteBrowsingDataDialog,
+        HelpMenu,
+        AboutDialog
     }
 
     internal sealed class ApplicationLaunchOptions

@@ -21,7 +21,7 @@ namespace IndianaExpedition
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 6,
+                RowCount = BrowserLayoutConstants.RootRowCount,
                 Margin = Padding.Empty,
                 Padding = Padding.Empty
             };
@@ -30,6 +30,7 @@ namespace IndianaExpedition
             _rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, BrowserLayoutConstants.NavigationToolbarHeight));
             _rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, BrowserLayoutConstants.AddressBarHeight));
             _rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, BrowserLayoutConstants.LinksBarHeight));
+            _rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 0f));
             _rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
             _rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, BrowserLayoutConstants.StatusBarHeight));
 
@@ -37,15 +38,17 @@ namespace IndianaExpedition
             _navigationToolStrip = BuildNavigationToolStrip();
             _addressPanel = BuildAddressPanel();
             _linksToolStrip = BuildLinksToolStrip();
+            _informationBar = BuildInformationBar();
             _contentSplit = BuildContentArea();
             _statusStrip = BuildStatusStrip();
 
-            _rootLayout.Controls.Add(_menuStrip, 0, 0);
-            _rootLayout.Controls.Add(_navigationToolStrip, 0, 1);
-            _rootLayout.Controls.Add(_addressPanel, 0, 2);
-            _rootLayout.Controls.Add(_linksToolStrip, 0, 3);
-            _rootLayout.Controls.Add(_contentSplit, 0, 4);
-            _rootLayout.Controls.Add(_statusStrip, 0, 5);
+            _rootLayout.Controls.Add(_menuStrip, 0, BrowserLayoutConstants.MenuRow);
+            _rootLayout.Controls.Add(_navigationToolStrip, 0, BrowserLayoutConstants.NavigationToolbarRow);
+            _rootLayout.Controls.Add(_addressPanel, 0, BrowserLayoutConstants.AddressBarRow);
+            _rootLayout.Controls.Add(_linksToolStrip, 0, BrowserLayoutConstants.LinksBarRow);
+            _rootLayout.Controls.Add(_informationBar, 0, BrowserLayoutConstants.InformationBarRow);
+            _rootLayout.Controls.Add(_contentSplit, 0, BrowserLayoutConstants.ContentRow);
+            _rootLayout.Controls.Add(_statusStrip, 0, BrowserLayoutConstants.StatusBarRow);
             ContentPanel.Controls.Add(_rootLayout);
             MainMenuStrip = _menuStrip;
 
@@ -54,7 +57,7 @@ namespace IndianaExpedition
 
         private MenuStrip BuildMenuStrip()
         {
-            var menu = new MenuStrip
+            var menu = new XpMenuStrip
             {
                 Dock = DockStyle.Fill,
                 Font = this.Font,
@@ -68,7 +71,7 @@ namespace IndianaExpedition
             file.DropDownItems.Add(new ToolStripSeparator());
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.SaveAs));
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.PageSetup));
-            file.DropDownItems.Add(CreateDisabledMenuItem(Strings.Print));
+            file.DropDownItems.Add(CreateMenuItem(Strings.Print, (s, e) => PrintPage(), Keys.Control | Keys.P));
             file.DropDownItems.Add(new ToolStripSeparator());
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.ImportExport));
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.Properties));
@@ -82,7 +85,7 @@ namespace IndianaExpedition
             edit.DropDownItems.Add(CreateMenuItem(Strings.Paste, (s, e) => ExecuteEditCommand(EditCommand.Paste), Keys.Control | Keys.V));
             edit.DropDownItems.Add(new ToolStripSeparator());
             edit.DropDownItems.Add(CreateMenuItem(Strings.SelectAll, (s, e) => ExecuteEditCommand(EditCommand.SelectAll), Keys.Control | Keys.A));
-            edit.DropDownItems.Add(CreateDisabledMenuItem(Strings.Find, Keys.Control | Keys.F));
+            edit.DropDownItems.Add(CreateMenuItem(Strings.Find, (s, e) => ShowPageFindDialog(), Keys.Control | Keys.F));
 
             var view = new ToolStripMenuItem(Strings.MenuView);
             var toolbars = new ToolStripMenuItem(Strings.Toolbars);
@@ -110,7 +113,13 @@ namespace IndianaExpedition
             view.DropDownItems.Add(CreateMenuItem(Strings.Stop, (s, e) => StopNavigation(), Keys.Escape));
             view.DropDownItems.Add(CreateMenuItem(Strings.Refresh, (s, e) => RefreshPage(), Keys.F5));
             view.DropDownItems.Add(new ToolStripSeparator());
-            view.DropDownItems.Add(CreateDisabledMenuItem(Strings.TextSize));
+            var textSize = new ToolStripMenuItem(Strings.TextSize);
+            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeLargest, BrowserZoomLevel.Largest));
+            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeLarger, BrowserZoomLevel.Larger));
+            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeMedium, BrowserZoomLevel.Medium));
+            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeSmaller, BrowserZoomLevel.Smaller));
+            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeSmallest, BrowserZoomLevel.Smallest));
+            view.DropDownItems.Add(textSize);
             view.DropDownItems.Add(CreateDisabledMenuItem(Strings.Encoding));
             view.DropDownItems.Add(CreateDisabledMenuItem(Strings.Source));
             view.DropDownItems.Add(new ToolStripSeparator());
@@ -122,21 +131,29 @@ namespace IndianaExpedition
             _favoritesMenu.DropDownItems.Add(new ToolStripSeparator());
 
             var tools = new ToolStripMenuItem(Strings.MenuTools);
-            tools.DropDownItems.Add(CreateMenuItem(Strings.DeleteHistory, (s, e) => ClearHistory()));
+            tools.DropDownItems.Add(CreateMenuItem(Strings.DeleteHistory, (s, e) => ShowDeleteBrowsingDataDialog()));
             tools.DropDownItems.Add(new ToolStripSeparator());
-            tools.DropDownItems.Add(CreateDisabledMenuItem(Strings.PopupBlocker));
+            var popupBlocker = new ToolStripMenuItem(Strings.PopupBlocker);
+            _popupBlockerEnabledMenuItem = new ToolStripMenuItem(Strings.PopupBlockerEnabled)
+            {
+                CheckOnClick = true
+            };
+            _popupBlockerEnabledMenuItem.Click += OnPopupBlockerEnabledClicked;
+            popupBlocker.DropDownItems.Add(_popupBlockerEnabledMenuItem);
+            popupBlocker.DropDownItems.Add(CreateMenuItem(Strings.PopupBlockerSettings, (s, e) => ShowPopupBlockerSettingsDialog()));
+            tools.DropDownItems.Add(popupBlocker);
             tools.DropDownItems.Add(CreateDisabledMenuItem(Strings.ManageAddons));
             tools.DropDownItems.Add(CreateDisabledMenuItem(Strings.WindowsUpdate));
             tools.DropDownItems.Add(new ToolStripSeparator());
             tools.DropDownItems.Add(CreateMenuItem(Strings.InternetOptions, (s, e) => ShowInternetOptionsDialog()));
 
-            var help = new ToolStripMenuItem(Strings.MenuHelp);
-            help.DropDownItems.Add(CreateDisabledMenuItem(Strings.Contents));
-            help.DropDownItems.Add(CreateDisabledMenuItem(Strings.OnlineSupport));
-            help.DropDownItems.Add(new ToolStripSeparator());
-            help.DropDownItems.Add(CreateMenuItem(Strings.About, (s, e) => ShowAboutDialog()));
+            _helpMenu = new ToolStripMenuItem(Strings.MenuHelp);
+            _helpMenu.DropDownItems.Add(CreateDisabledMenuItem(Strings.Contents));
+            _helpMenu.DropDownItems.Add(CreateDisabledMenuItem(Strings.OnlineSupport));
+            _helpMenu.DropDownItems.Add(new ToolStripSeparator());
+            _helpMenu.DropDownItems.Add(CreateMenuItem(Strings.About, (s, e) => ShowAboutDialog()));
 
-            menu.Items.AddRange(new ToolStripItem[] { file, edit, view, _favoritesMenu, tools, help });
+            menu.Items.AddRange(new ToolStripItem[] { file, edit, view, _favoritesMenu, tools, _helpMenu });
             return menu;
         }
 
@@ -159,8 +176,8 @@ namespace IndianaExpedition
             _stopButton = CreateToolbarButton(Strings.ToolbarStop, GlyphKind.Stop, (s, e) => StopNavigation());
             _refreshButton = CreateToolbarButton(Strings.ToolbarRefresh, GlyphKind.Refresh, (s, e) => RefreshPage());
             _homeButton = CreateToolbarButton(Strings.ToolbarHome, GlyphKind.Home, (s, e) => GoHome());
-            _favoritesButton = CreateToolbarButton(Strings.ToolbarFavorites, GlyphKind.Favorites, (s, e) => ShowFavoritesSidebar(), showText: true);
-            _historyButton = CreateToolbarButton(Strings.ToolbarHistory, GlyphKind.History, (s, e) => ShowHistorySidebar(), showText: true);
+            _favoritesButton = CreateToolbarButton(Strings.ToolbarFavorites, GlyphKind.Favorites, (s, e) => ToggleExplorerSidebar(ExplorerMode.Favorites), showText: true);
+            _historyButton = CreateToolbarButton(Strings.ToolbarHistory, GlyphKind.History, (s, e) => ToggleExplorerSidebar(ExplorerMode.History), showText: true);
 
             _backButton.Enabled = false;
             _forwardButton.Enabled = false;
@@ -256,6 +273,79 @@ namespace IndianaExpedition
             return toolStrip;
         }
 
+        private Panel BuildInformationBar()
+        {
+            var panel = new XpInformationBarPanel
+            {
+                Dock = DockStyle.Fill,
+                Margin = Padding.Empty,
+                Padding = new Padding(4, 4, 4, 4),
+                Visible = false
+            };
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 5,
+                RowCount = 1,
+                Margin = Padding.Empty,
+                Padding = Padding.Empty,
+                BackColor = Color.Transparent
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, PopupUiConstants.InformationIconWidth));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, PopupUiConstants.InformationActionWidth));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, PopupUiConstants.InformationAllowWidth));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, PopupUiConstants.InformationCloseWidth));
+
+            var icon = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = "!",
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font(Font, FontStyle.Bold),
+                ForeColor = XpPalette.InformationBarIconBorder,
+                BackColor = XpPalette.InformationBarIconFace,
+                Margin = new Padding(2)
+            };
+            _informationBarLabel = new Label
+            {
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                ForeColor = XpPalette.InformationBarText,
+                AutoEllipsis = true
+            };
+            _openBlockedPopupButton = new XpButton
+            {
+                Dock = DockStyle.Fill,
+                Text = Strings.OpenBlockedPopup,
+                Margin = new Padding(2, 0, 2, 0)
+            };
+            _openBlockedPopupButton.Click += (s, e) => OpenOldestBlockedPopup();
+            _allowPopupOriginButton = new XpButton
+            {
+                Dock = DockStyle.Fill,
+                Text = Strings.AlwaysAllowPopupSite,
+                Margin = new Padding(2, 0, 2, 0)
+            };
+            _allowPopupOriginButton.Click += (s, e) => AllowOldestPopupOrigin();
+            _closeInformationBarButton = new XpButton
+            {
+                Dock = DockStyle.Fill,
+                Text = BrowserUiConstants.CloseGlyph,
+                Margin = Padding.Empty,
+                TabStop = false
+            };
+            _closeInformationBarButton.Click += (s, e) => DismissBlockedPopups();
+
+            layout.Controls.Add(icon, 0, 0);
+            layout.Controls.Add(_informationBarLabel, 1, 0);
+            layout.Controls.Add(_openBlockedPopupButton, 2, 0);
+            layout.Controls.Add(_allowPopupOriginButton, 3, 0);
+            layout.Controls.Add(_closeInformationBarButton, 4, 0);
+            panel.Controls.Add(layout);
+            return panel;
+        }
+
         private SplitContainer BuildContentArea()
         {
             var split = new SplitContainer
@@ -336,6 +426,11 @@ namespace IndianaExpedition
                 Width = 90,
                 Visible = false
             };
+            _zoomLabel = new ToolStripStatusLabel
+            {
+                BorderSides = ToolStripStatusLabelBorderSides.Left,
+                BorderStyle = Border3DStyle.Etched
+            };
             _zoneLabel = new ToolStripStatusLabel(Strings.InternetZone)
             {
                 Image = XpGlyphs.Create(GlyphKind.Globe, 16),
@@ -344,6 +439,7 @@ namespace IndianaExpedition
             };
             status.Items.Add(_statusLabel);
             status.Items.Add(_progressBar);
+            status.Items.Add(_zoomLabel);
             status.Items.Add(_zoneLabel);
             return status;
         }
@@ -398,10 +494,18 @@ namespace IndianaExpedition
             return item;
         }
 
+        private ToolStripMenuItem CreateZoomMenuItem(string text, BrowserZoomLevel level)
+        {
+            var item = new ToolStripMenuItem(text) { Tag = level };
+            item.Click += (sender, args) => SetZoomLevel(level);
+            _zoomMenuItems[level] = item;
+            return item;
+        }
+
         private void SetLinksBarVisible(bool visible, bool persist)
         {
             _linksToolStrip.Visible = visible;
-            _rootLayout.RowStyles[3].Height = visible ? BrowserLayoutConstants.LinksBarHeight : 0f;
+            _rootLayout.RowStyles[BrowserLayoutConstants.LinksBarRow].Height = visible ? BrowserLayoutConstants.LinksBarHeight : 0f;
             if (_linksBarMenuItem != null)
             {
                 _linksBarMenuItem.Checked = visible;
@@ -416,7 +520,7 @@ namespace IndianaExpedition
         private void SetStatusBarVisible(bool visible, bool persist)
         {
             _statusStrip.Visible = visible;
-            _rootLayout.RowStyles[5].Height = visible ? BrowserLayoutConstants.StatusBarHeight : 0f;
+            _rootLayout.RowStyles[BrowserLayoutConstants.StatusBarRow].Height = visible ? BrowserLayoutConstants.StatusBarHeight : 0f;
             if (_statusBarMenuItem != null)
             {
                 _statusBarMenuItem.Checked = visible;
@@ -445,7 +549,7 @@ namespace IndianaExpedition
                 {
                     _rootLayout.RowStyles[index].Height = 0f;
                 }
-                _rootLayout.RowStyles[5].Height = 0f;
+                _rootLayout.RowStyles[BrowserLayoutConstants.StatusBarRow].Height = 0f;
             }
             else
             {
@@ -458,9 +562,9 @@ namespace IndianaExpedition
                 {
                     WindowState = FormWindowState.Maximized;
                 }
-                _rootLayout.RowStyles[0].Height = BrowserLayoutConstants.MenuHeight;
-                _rootLayout.RowStyles[1].Height = BrowserLayoutConstants.NavigationToolbarHeight;
-                _rootLayout.RowStyles[2].Height = BrowserLayoutConstants.AddressBarHeight;
+                _rootLayout.RowStyles[BrowserLayoutConstants.MenuRow].Height = BrowserLayoutConstants.MenuHeight;
+                _rootLayout.RowStyles[BrowserLayoutConstants.NavigationToolbarRow].Height = BrowserLayoutConstants.NavigationToolbarHeight;
+                _rootLayout.RowStyles[BrowserLayoutConstants.AddressBarRow].Height = BrowserLayoutConstants.AddressBarHeight;
                 ApplyPersistedViewSettings();
             }
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -12,19 +13,25 @@ using IndianaExpedition.Styling;
 
 namespace IndianaExpedition
 {
-    internal sealed partial class BrowserForm : LunaForm
+    internal sealed partial class BrowserForm : LunaForm, IMessageFilter
     {
         private readonly BrowserApplicationContext _application;
         private readonly BrowserApplicationServices _services;
         private readonly string _initialUrl;
         private readonly Icon _applicationIcon;
         private readonly bool _visualTestMode;
+        private readonly VisualTestState _visualTestState;
         private readonly string _visualTestReadyFile;
 
         private TableLayoutPanel _rootLayout;
         private MenuStrip _menuStrip;
         private ToolStrip _navigationToolStrip;
         private ToolStrip _linksToolStrip;
+        private Panel _informationBar;
+        private Label _informationBarLabel;
+        private Button _openBlockedPopupButton;
+        private Button _allowPopupOriginButton;
+        private Button _closeInformationBarButton;
         private Panel _addressPanel;
         private Label _addressLabel;
         private ComboBox _addressBox;
@@ -38,6 +45,7 @@ namespace IndianaExpedition
         private StatusStrip _statusStrip;
         private ToolStripStatusLabel _statusLabel;
         private ToolStripProgressBar _progressBar;
+        private ToolStripStatusLabel _zoomLabel;
         private ToolStripStatusLabel _zoneLabel;
 
         private ToolStripButton _backButton;
@@ -48,10 +56,20 @@ namespace IndianaExpedition
         private ToolStripButton _favoritesButton;
         private ToolStripButton _historyButton;
         private ToolStripMenuItem _favoritesMenu;
+        private ToolStripMenuItem _helpMenu;
         private ToolStripMenuItem _linksBarMenuItem;
         private ToolStripMenuItem _statusBarMenuItem;
+        private ToolStripMenuItem _popupBlockerEnabledMenuItem;
+        private readonly Dictionary<BrowserZoomLevel, ToolStripMenuItem> _zoomMenuItems =
+            new Dictionary<BrowserZoomLevel, ToolStripMenuItem>();
+
+        private readonly Queue<BlockedPopupRequest> _blockedPopups = new Queue<BlockedPopupRequest>();
 
         private WebView2 _webView;
+        private IPageFindController _pageFindController;
+        private PageFindCriteria _lastFindCriteria = new PageFindCriteria();
+        private Form _visualTestDialog;
+        private IPageFindController _visualTestFindController;
         private Task _initializeTask;
         private bool _browserReady;
         private bool _recovering;
@@ -78,6 +96,7 @@ namespace IndianaExpedition
 
             _services = application.Services;
             _visualTestMode = launchOptions.IsVisualTestMode;
+            _visualTestState = launchOptions.VisualTestState;
             _visualTestReadyFile = launchOptions.VisualTestReadyFile;
             _initialUrl = string.IsNullOrWhiteSpace(initialUrl)
                 ? BrowserDefaults.HomeUrl
@@ -116,6 +135,7 @@ namespace IndianaExpedition
             Shown += OnShown;
             Activated += OnActivated;
             FormClosing += OnFormClosing;
+            Application.AddMessageFilter(this);
         }
 
         internal CoreWebView2 CoreWebView => _webView?.CoreWebView2;
@@ -132,6 +152,13 @@ namespace IndianaExpedition
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            var managedCommand = ResolveManagedBrowserShortcut(keyData);
+            if (managedCommand != ManagedBrowserCommand.None)
+            {
+                ExecuteManagedBrowserCommand(managedCommand);
+                return true;
+            }
+
             switch (keyData)
             {
                 case Keys.Control | Keys.L:
@@ -176,6 +203,27 @@ namespace IndianaExpedition
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
+        public bool PreFilterMessage(ref Message message)
+        {
+            if (_disposed ||
+                (message.Msg != ApplicationConstants.WindowMessageKeyDown &&
+                 message.Msg != ApplicationConstants.WindowMessageSystemKeyDown) ||
+                !ReferenceEquals(Form.ActiveForm, this))
+            {
+                return false;
+            }
+
+            var keyData = (Keys)message.WParam.ToInt32() | ModifierKeys;
+            var command = ResolveManagedBrowserShortcut(keyData);
+            if (command == ManagedBrowserCommand.None)
+            {
+                return false;
+            }
+
+            ExecuteManagedBrowserCommand(command);
+            return true;
+        }
+
         private async void OnShown(object sender, EventArgs args)
         {
             if (_visualTestMode)
@@ -205,10 +253,10 @@ namespace IndianaExpedition
             switch (state)
             {
                 case VisualTestState.Favorites:
-                    ShowFavoritesSidebar();
+                    ToggleExplorerSidebar(ExplorerMode.Favorites);
                     break;
                 case VisualTestState.History:
-                    ShowHistorySidebar();
+                    ToggleExplorerSidebar(ExplorerMode.History);
                     break;
             }
         }
@@ -286,6 +334,19 @@ namespace IndianaExpedition
             {
                 SetStatusBarVisible(settings.ShowStatusBar, persist: false);
             }
+            ApplyZoomSetting(settings.DefaultZoomLevel);
+            if (_popupBlockerEnabledMenuItem != null)
+            {
+                _popupBlockerEnabledMenuItem.Checked = settings.PopupBlockerEnabled;
+            }
+            if (!settings.PopupBlockerEnabled && _blockedPopups.Count > 0)
+            {
+                DismissBlockedPopups();
+            }
+            else if (_informationBar != null)
+            {
+                SetInformationBarVisible(_blockedPopups.Count > 0);
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -298,9 +359,13 @@ namespace IndianaExpedition
 
             if (disposing)
             {
+                Application.RemoveMessageFilter(this);
                 _services.Favorites.Changed -= OnFavoritesChanged;
                 _services.History.Changed -= OnHistoryChanged;
                 _services.Settings.Changed -= OnSettingsChanged;
+                _visualTestDialog?.Dispose();
+                _visualTestFindController?.Dispose();
+                DetachWebViewFeatures(_webView);
                 _webView?.Dispose();
                 _applicationIcon?.Dispose();
             }

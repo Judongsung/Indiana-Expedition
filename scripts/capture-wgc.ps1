@@ -3,7 +3,16 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Debug",
 
-    [ValidateSet("Main", "Favorites", "History")]
+    [ValidateSet(
+        "Main",
+        "Favorites",
+        "History",
+        "PopupBlocked",
+        "FindDialog",
+        "DeleteBrowsingDataDialog",
+        "HelpMenu",
+        "AboutDialog"
+    )]
     [string]$State = "Main",
 
     [string]$OutputPath,
@@ -25,6 +34,13 @@ public static class VisualTestWindowState
 {
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindow(IntPtr windowHandle);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr windowHandle, out uint processId);
 }
 '@
 
@@ -91,6 +107,21 @@ $arguments = @(
 )
 $process = $null
 
+function Test-ApplicationOwnsForegroundWindow {
+    param([int]$ExpectedProcessId)
+
+    $foregroundWindow = [VisualTestWindowState]::GetForegroundWindow()
+    if ($foregroundWindow -eq [IntPtr]::Zero) {
+        return $false
+    }
+
+    [uint32]$foregroundOwnerProcessId = 0
+    [VisualTestWindowState]::GetWindowThreadProcessId(
+        $foregroundWindow,
+        [ref]$foregroundOwnerProcessId) | Out-Null
+    return $foregroundOwnerProcessId -eq $ExpectedProcessId
+}
+
 try {
     $process = Start-Process `
         -FilePath $applicationPath `
@@ -98,35 +129,47 @@ try {
         -PassThru
 
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
-    do {
-        Start-Sleep -Milliseconds $windowPollMilliseconds
-        $process.Refresh()
-        if ($process.HasExited) {
-            throw "Indiana Expedition가 WGC 캡처 전에 종료되었습니다. 종료 코드: $($process.ExitCode)"
-        }
-
-        $windowHandle = $process.MainWindowHandle
-    } while ($windowHandle -eq [IntPtr]::Zero -and [DateTime]::UtcNow -lt $deadline)
-
-    if ($windowHandle -eq [IntPtr]::Zero) {
-        throw "제한 시간 내에 Indiana Expedition 창 핸들을 찾지 못했습니다."
-    }
-
+    [Int64]$windowHandleValue = 0
     do {
         Start-Sleep -Milliseconds $windowPollMilliseconds
         $process.Refresh()
         if ($process.HasExited) {
             throw "Indiana Expedition가 화면 준비 신호를 보내기 전에 종료되었습니다. 종료 코드: $($process.ExitCode)"
         }
-    } while (-not (Test-Path -LiteralPath $readyFilePath) -and [DateTime]::UtcNow -lt $deadline)
+        if (Test-ApplicationOwnsForegroundWindow -ExpectedProcessId $process.Id) {
+            throw "비간섭 검증 실패: 화면 준비 중 Indiana Expedition의 창이 포그라운드가 되었습니다."
+        }
 
-    if (-not (Test-Path -LiteralPath $readyFilePath)) {
-        throw "제한 시간 내에 Indiana Expedition 화면 준비 신호를 받지 못했습니다."
+        if (Test-Path -LiteralPath $readyFilePath) {
+            try {
+                $readyFileContent = (Get-Content -LiteralPath $readyFilePath -Raw).Trim()
+                [Int64]::TryParse($readyFileContent, [ref]$windowHandleValue) | Out-Null
+            } catch [System.IO.IOException] {
+                $windowHandleValue = 0
+            }
+        }
+    } while ($windowHandleValue -le 0 -and [DateTime]::UtcNow -lt $deadline)
+
+    if ($windowHandleValue -le 0) {
+        throw "제한 시간 내에 Indiana Expedition 캡처 대상 HWND를 받지 못했습니다."
+    }
+
+    $windowHandle = [IntPtr]$windowHandleValue
+    if (-not [VisualTestWindowState]::IsWindow($windowHandle)) {
+        throw "앱이 기록한 캡처 대상 HWND가 더 이상 유효하지 않습니다: $windowHandleValue"
+    }
+
+    [uint32]$windowOwnerProcessId = 0
+    $windowThreadId = [VisualTestWindowState]::GetWindowThreadProcessId(
+        $windowHandle,
+        [ref]$windowOwnerProcessId)
+    if ($windowThreadId -eq 0 -or $windowOwnerProcessId -ne $process.Id) {
+        throw "캡처 대상 HWND가 실행한 Indiana Expedition 프로세스 소유가 아닙니다. HWND=$windowHandleValue, Owner=$windowOwnerProcessId, Expected=$($process.Id)"
     }
 
     Start-Sleep -Milliseconds $renderStabilizationMilliseconds
-    if ([VisualTestWindowState]::GetForegroundWindow() -eq $windowHandle) {
-        throw "비간섭 검증 실패: Indiana Expedition가 포그라운드 창이 되었습니다."
+    if (Test-ApplicationOwnsForegroundWindow -ExpectedProcessId $process.Id) {
+        throw "비간섭 검증 실패: Indiana Expedition의 창이 포그라운드가 되었습니다."
     }
 
     $captureOutput = & $captureToolPath `
@@ -139,8 +182,8 @@ try {
         throw "직접 WGC 캡처에 실패했습니다. 다른 캡처 방식으로 우회하지 않았습니다.`n$captureText"
     }
 
-    if ([VisualTestWindowState]::GetForegroundWindow() -eq $windowHandle) {
-        throw "비간섭 검증 실패: WGC 캡처가 Indiana Expedition를 포그라운드로 전환했습니다."
+    if (Test-ApplicationOwnsForegroundWindow -ExpectedProcessId $process.Id) {
+        throw "비간섭 검증 실패: WGC 캡처가 Indiana Expedition의 창을 포그라운드로 전환했습니다."
     }
 
     if (-not (Test-Path -LiteralPath $OutputPath)) {

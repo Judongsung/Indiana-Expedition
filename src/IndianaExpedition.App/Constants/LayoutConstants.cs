@@ -6,8 +6,17 @@ namespace IndianaExpedition.Constants
         internal const float NavigationToolbarHeight = 40f;
         internal const float AddressBarHeight = 25f;
         internal const float LinksBarHeight = 24f;
+        internal const float InformationBarHeight = 36f;
         internal const float StatusBarHeight = 23f;
-        internal const int ChromeRowCount = 4;
+        internal const int MenuRow = 0;
+        internal const int NavigationToolbarRow = 1;
+        internal const int AddressBarRow = 2;
+        internal const int LinksBarRow = 3;
+        internal const int InformationBarRow = 4;
+        internal const int ContentRow = 5;
+        internal const int StatusBarRow = 6;
+        internal const int RootRowCount = 7;
+        internal const int ChromeRowCount = 5;
         internal const int NavigationProgressAnimationSpeed = 30;
         internal const int InitialWindowWidth = 1024;
         internal const int InitialWindowHeight = 768;
@@ -16,6 +25,15 @@ namespace IndianaExpedition.Constants
         internal const int VisualReferenceWindowWidth = 800;
         internal const int VisualReferenceWindowHeight = 600;
         internal const int NavigationImageSize = 24;
+    }
+
+    internal static class PopupUiConstants
+    {
+        internal const int MaximumPendingPopups = 10;
+        internal const int InformationIconWidth = 28;
+        internal const int InformationActionWidth = 138;
+        internal const int InformationAllowWidth = 180;
+        internal const int InformationCloseWidth = 28;
     }
 
     internal static class LunaMetrics
