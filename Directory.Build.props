@@ -5,6 +5,5 @@
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <RestorePackagesPath>$(MSBuildThisFileDirectory).packages</RestorePackagesPath>
-    <TargetFrameworkRootPath>$(MSBuildThisFileDirectory).packages\microsoft.netframework.referenceassemblies.net48\1.0.3\build\</TargetFrameworkRootPath>
   </PropertyGroup>
 </Project>
