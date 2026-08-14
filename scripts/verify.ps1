@@ -15,6 +15,8 @@ $appTestsPath = Join-Path `
 $buildReleaseScript = Join-Path $PSScriptRoot "build-release.ps1"
 $verifyVersionScript = Join-Path $PSScriptRoot "verify-version.ps1"
 
+Write-Host "검증 SDK: $(& dotnet --version)"
+
 Write-Host "[1/6] 솔루션 복원"
 & dotnet restore $solutionPath "-p:Platform=x64"
 if ($LASTEXITCODE -ne 0) {
