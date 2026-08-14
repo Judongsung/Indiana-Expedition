@@ -235,11 +235,13 @@ namespace IndianaExpedition.Browser
             args.Handled = true;
             var session = new WebViewContextMenuSession(
                 menu,
-                deferral);
+                new CoreWebViewContextMenuDeferral(deferral),
+                WinFormsUiCommandDispatcher.Instance,
+                _webView);
             try
             {
                 ReplaceContextMenuSession(session);
-                session.Show(_webView, args.Location);
+                session.Show(args.Location);
             }
             catch
             {

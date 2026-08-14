@@ -55,9 +55,10 @@ Luna 창 크롬은 `LunaMetrics`와 `XpPalette`를 조정 지점으로 사용합
 저장소는 `Microsoft.NETFramework.ReferenceAssemblies.net48` 패키지를 사용하므로 별도의 4.8 Targeting Pack이 없는 환경에서도 CLI 빌드할 수 있습니다. WebView2 Runtime은 앱 실행에 필요하며 [Microsoft 공식 페이지](https://developer.microsoft.com/microsoft-edge/webview2/)에서 받을 수 있습니다.
 
 ```powershell
-dotnet build IndianaExpedition.sln -c Release
-.\tests\IndianaExpedition.Core.Tests\bin\Release\net48\IndianaExpedition.Core.Tests.exe
+./scripts/verify.ps1
 ```
+
+이 공통 검증은 솔루션 복원, Release/x64 빌드, Core 테스트, 전경을 획득하지 않는 STA App 동작 테스트, 배포 구성·라이선스 검사와 `git diff --check`를 순서대로 실행합니다. UI 테스트는 외부 입력이나 네트워크를 사용하지 않고 실제 컨트롤의 `PerformClick()` 이벤트 연결과 우클릭 메뉴 deferral 순서를 검증합니다.
 
 실행용 폴더는 다음 스크립트로 만듭니다.
 
@@ -76,6 +77,8 @@ Windows Graphics Capture로 메인 화면과 사이드바, 팝업·찾기·검�
 ```
 
 결과는 `artifacts\wgc`에 생성됩니다. 세부 구조와 단일 상태 캡처 방법은 [화면 테스트 문서](docs/VISUAL-TESTING.md)를 참고하세요.
+
+릴리스 후보는 로컬에서 `./scripts/verify-release.ps1 -Version 0.3.0`으로 공통 검증과 WGC 14개 상태를 모두 통과시킨 뒤 GitHub의 수동 `Draft release` 워크플로로 생성합니다. 자동 공개는 하지 않으며 자산과 체크섬을 사람이 확인한 후 공개합니다. 전체 순서는 [릴리스 절차](docs/RELEASING.md)에 정리했습니다.
 
 WGC 캡처 도구는 저장소 안에서 화면 테스트를 빌드·실행하기 위한 개발 도구이며 `build-release.ps1`이 만드는 앱 배포 폴더에는 포함되지 않습니다. 이 도구의 바이너리를 별도로 재배포하려면 생성된 출력물에 포함되는 런타임 구성 요소와 각 라이선스를 다시 확인해야 합니다.
 

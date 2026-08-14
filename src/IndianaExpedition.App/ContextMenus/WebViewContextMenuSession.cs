@@ -1,7 +1,6 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using Microsoft.Web.WebView2.Core;
 
 namespace IndianaExpedition.ContextMenus
 {
@@ -9,37 +8,37 @@ namespace IndianaExpedition.ContextMenus
     {
         private readonly PageContextMenuDefinition _definition;
         private readonly ContextMenuStrip _menu;
-        private readonly CoreWebView2Deferral _deferral;
-        private Control _owner;
+        private readonly IContextMenuDeferral _deferral;
+        private readonly IUiCommandDispatcher _dispatcher;
+        private readonly Control _owner;
         private Action _selectedCommand;
         private bool _disposed;
 
         internal WebViewContextMenuSession(
             PageContextMenuDefinition definition,
-            CoreWebView2Deferral deferral)
+            IContextMenuDeferral deferral,
+            IUiCommandDispatcher dispatcher,
+            Control owner)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
             _menu = definition.Menu;
             _deferral = deferral ?? throw new ArgumentNullException(nameof(deferral));
-            _menu.ItemClicked += OnItemClicked;
+            _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+            _owner = owner ?? throw new ArgumentNullException(nameof(owner));
+            _definition.CommandInvoked += OnCommandInvoked;
             _menu.Closed += OnMenuClosed;
         }
 
         internal event EventHandler Closed;
 
-        internal void Show(Control owner, Point location)
+        internal void Show(Point location)
         {
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(WebViewContextMenuSession));
             }
-            if (owner == null)
-            {
-                throw new ArgumentNullException(nameof(owner));
-            }
 
-            _owner = owner;
-            _menu.Show(owner, location);
+            _menu.Show(_owner, location);
         }
 
         public void Dispose()
@@ -47,14 +46,19 @@ namespace IndianaExpedition.ContextMenus
             CompleteSession(command: null);
         }
 
-        private void OnItemClicked(object sender, ToolStripItemClickedEventArgs args)
+        internal void Close()
         {
-            _definition.TryGetCommand(args.ClickedItem, out _selectedCommand);
+            CompleteSession(_selectedCommand);
+        }
+
+        private void OnCommandInvoked(object sender, PageContextMenuCommandEventArgs args)
+        {
+            _selectedCommand = args.Execute;
         }
 
         private void OnMenuClosed(object sender, ToolStripDropDownClosedEventArgs args)
         {
-            CompleteSession(_selectedCommand);
+            Close();
         }
 
         private void CompleteSession(Action command)
@@ -65,45 +69,53 @@ namespace IndianaExpedition.ContextMenus
             }
 
             _disposed = true;
-            _menu.ItemClicked -= OnItemClicked;
+            _definition.CommandInvoked -= OnCommandInvoked;
             _menu.Closed -= OnMenuClosed;
+            var deferralCompleted = false;
             try
             {
                 _deferral.Complete();
+                deferralCompleted = true;
             }
             finally
             {
-                Closed?.Invoke(this, EventArgs.Empty);
-                DispatchAfterContextMenuRequest(_owner, _menu, command);
+                try
+                {
+                    Closed?.Invoke(this, EventArgs.Empty);
+                }
+                finally
+                {
+                    DispatchAfterContextMenuRequest(
+                        _owner,
+                        _menu,
+                        deferralCompleted ? command : null);
+                }
             }
         }
 
-        private static void DispatchAfterContextMenuRequest(
+        private void DispatchAfterContextMenuRequest(
             Control owner,
             ContextMenuStrip menu,
             Action command)
         {
-            if (owner == null || owner.IsDisposed || !owner.IsHandleCreated)
+            if (command == null || owner == null || owner.IsDisposed || !owner.IsHandleCreated)
             {
                 menu.Dispose();
                 return;
             }
 
-            try
+            var posted = _dispatcher.TryPost(owner, () =>
             {
-                owner.BeginInvoke(new MethodInvoker(() =>
+                try
                 {
-                    try
-                    {
-                        menu.Dispose();
-                    }
-                    finally
-                    {
-                        command?.Invoke();
-                    }
-                }));
-            }
-            catch (InvalidOperationException)
+                    menu.Dispose();
+                }
+                finally
+                {
+                    command();
+                }
+            });
+            if (!posted)
             {
                 menu.Dispose();
             }

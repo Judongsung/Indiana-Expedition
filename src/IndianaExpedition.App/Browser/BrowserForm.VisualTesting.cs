@@ -17,6 +17,7 @@ using IndianaExpedition.Dialogs;
 using IndianaExpedition.Find;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Settings;
+using IndianaExpedition.Styling;
 
 namespace IndianaExpedition.Browser
 {
@@ -122,7 +123,10 @@ namespace IndianaExpedition.Browser
             if (!ReferenceEquals(captureTarget, this))
             {
                 captureTarget.Show();
-                captureTarget.SendToBack();
+                if (captureTarget is LunaForm lunaForm)
+                {
+                    lunaForm.SendBehindWithoutActivation();
+                }
                 captureTarget.PerformLayout();
                 captureTarget.Invalidate(true);
                 captureTarget.Update();

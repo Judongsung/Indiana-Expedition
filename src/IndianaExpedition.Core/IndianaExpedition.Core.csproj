@@ -3,7 +3,7 @@
     <TargetFramework>net48</TargetFramework>
     <RootNamespace>IndianaExpedition.Core</RootNamespace>
     <AssemblyName>IndianaExpedition.Core</AssemblyName>
-    <Version>0.3.0</Version>
+    <Version>$(IndianaExpeditionVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup>

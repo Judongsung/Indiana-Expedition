@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using IndianaExpedition.Constants;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
@@ -72,6 +73,7 @@ namespace IndianaExpedition.BrowsingData
             };
             _deleteButton = new XpButton
             {
+                Name = UiAutomationIds.BrowsingData.DeleteButton,
                 Text = Strings.DeleteSelected,
                 Location = new Point(316, 442),
                 Size = new Size(92, 27)
@@ -79,6 +81,7 @@ namespace IndianaExpedition.BrowsingData
             _deleteButton.Click += async (sender, args) => await DeleteAsync().ConfigureAwait(true);
             _cancelButton = new XpButton
             {
+                Name = UiAutomationIds.BrowsingData.CancelButton,
                 Text = Strings.Cancel,
                 Location = new Point(416, 442),
                 Size = new Size(92, 27),
@@ -116,6 +119,7 @@ namespace IndianaExpedition.BrowsingData
         {
             var checkBox = new CheckBox
             {
+                Name = UiAutomationIds.BrowsingData.Option(selection),
                 Text = text,
                 Location = new Point(20, top),
                 Size = new Size(440, 24),

@@ -71,6 +71,7 @@ namespace IndianaExpedition.Downloads
             _clearButton = CreateButton(Strings.ClearDownloadHistory, 362, ClearHistory);
             var close = new XpButton
             {
+                Name = UiAutomationIds.DownloadHistory.CloseButton,
                 Text = Strings.CloseButton,
                 Location = new Point(606, 354),
                 Size = new Size(98, 27),

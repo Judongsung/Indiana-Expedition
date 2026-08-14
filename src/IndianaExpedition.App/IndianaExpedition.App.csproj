@@ -11,7 +11,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-    <Version>0.3.0</Version>
+    <Version>$(IndianaExpeditionVersion)</Version>
     <Product>Indiana Expedition</Product>
     <Description>Windows XP SP2의 IE6 사용 경험을 WebView2로 재구성한 WinForms 브라우저</Description>
   </PropertyGroup>

@@ -16,6 +16,10 @@ namespace IndianaExpedition.Styling
         private const int MonitorDefaultToNearest = 2;
         private const int DropShadowClassStyle = 0x00020000;
         private const int NoActivateExtendedStyle = 0x08000000;
+        private const uint SetWindowPositionNoSize = 0x0001;
+        private const uint SetWindowPositionNoMove = 0x0002;
+        private const uint SetWindowPositionNoActivate = 0x0010;
+        private static readonly IntPtr WindowPositionBottom = new IntPtr(1);
 
         private readonly LunaTitleBar _titleBar;
         private readonly Font _captionFont;
@@ -130,6 +134,25 @@ namespace IndianaExpedition.Styling
         internal void MinimizeWindow()
         {
             WindowState = FormWindowState.Minimized;
+        }
+
+        internal void SendBehindWithoutActivation()
+        {
+            if (!IsHandleCreated)
+            {
+                return;
+            }
+
+            SetWindowPos(
+                Handle,
+                WindowPositionBottom,
+                0,
+                0,
+                0,
+                0,
+                SetWindowPositionNoMove |
+                SetWindowPositionNoSize |
+                SetWindowPositionNoActivate);
         }
 
         internal void ToggleMaximizeWindow()
@@ -360,6 +383,17 @@ namespace IndianaExpedition.Styling
 
         [DllImport("user32.dll")]
         private static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetWindowPos(
+            IntPtr window,
+            IntPtr insertAfter,
+            int left,
+            int top,
+            int width,
+            int height,
+            uint flags);
 
         [DllImport("gdi32.dll")]
         private static extern IntPtr CreateRoundRectRgn(

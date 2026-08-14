@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
+    <IndianaExpeditionVersion>0.3.0</IndianaExpeditionVersion>
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>

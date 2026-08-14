@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using IndianaExpedition.Constants;
 
 namespace IndianaExpedition.ContextMenus
 {
@@ -8,6 +9,8 @@ namespace IndianaExpedition.ContextMenus
     {
         private readonly Dictionary<ToolStripItem, Action> _commands =
             new Dictionary<ToolStripItem, Action>();
+        private readonly Dictionary<PageContextMenuCommand, ToolStripItem> _items =
+            new Dictionary<PageContextMenuCommand, ToolStripItem>();
 
         internal PageContextMenuDefinition(ContextMenuStrip menu)
         {
@@ -16,15 +19,28 @@ namespace IndianaExpedition.ContextMenus
 
         internal ContextMenuStrip Menu { get; }
 
-        internal ToolStripItem AddCommand(string text, Action command)
+        internal event EventHandler<PageContextMenuCommandEventArgs> CommandInvoked;
+
+        internal ToolStripItem AddCommand(
+            PageContextMenuCommand command,
+            string text,
+            Action execute,
+            bool enabled)
         {
-            if (command == null)
+            if (execute == null)
             {
-                throw new ArgumentNullException(nameof(command));
+                throw new ArgumentNullException(nameof(execute));
             }
 
-            var item = Menu.Items.Add(text);
-            _commands.Add(item, command);
+            var item = new ToolStripMenuItem(text)
+            {
+                Name = UiAutomationIds.ContextMenu.Command(command),
+                Enabled = enabled
+            };
+            item.Click += OnCommandClicked;
+            Menu.Items.Add(item);
+            _commands.Add(item, execute);
+            _items.Add(command, item);
             return item;
         }
 
@@ -33,20 +49,50 @@ namespace IndianaExpedition.ContextMenus
             Menu.Items.Add(new ToolStripSeparator());
         }
 
-        internal void AddDisabledItem(string text)
+        internal void AddDisabledItem(PageContextMenuCommand command, string text)
         {
-            Menu.Items.Add(new ToolStripMenuItem(text) { Enabled = false });
+            var item = new ToolStripMenuItem(text)
+            {
+                Name = UiAutomationIds.ContextMenu.Command(command),
+                Enabled = false
+            };
+            Menu.Items.Add(item);
+            _items.Add(command, item);
         }
 
-        internal bool TryGetCommand(ToolStripItem item, out Action command)
+        internal ToolStripItem GetItem(PageContextMenuCommand command)
         {
-            if (item == null)
+            if (!_items.TryGetValue(command, out var item))
             {
-                command = null;
-                return false;
+                throw new InvalidOperationException("The page context-menu item is not available: " + command);
             }
 
-            return _commands.TryGetValue(item, out command);
+            return item;
         }
+
+        internal bool Contains(PageContextMenuCommand command)
+        {
+            return _items.ContainsKey(command);
+        }
+
+        private void OnCommandClicked(object sender, EventArgs args)
+        {
+            if (sender is ToolStripItem item &&
+                item.Enabled &&
+                _commands.TryGetValue(item, out var execute))
+            {
+                CommandInvoked?.Invoke(this, new PageContextMenuCommandEventArgs(execute));
+            }
+        }
+    }
+
+    internal sealed class PageContextMenuCommandEventArgs : EventArgs
+    {
+        internal PageContextMenuCommandEventArgs(Action execute)
+        {
+            Execute = execute ?? throw new ArgumentNullException(nameof(execute));
+        }
+
+        internal Action Execute { get; }
     }
 }

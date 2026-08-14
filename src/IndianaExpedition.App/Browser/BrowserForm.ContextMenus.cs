@@ -3,8 +3,6 @@ using System.Globalization;
 using System.Windows.Forms;
 using IndianaExpedition.ContextMenus;
 using IndianaExpedition.Constants;
-using IndianaExpedition.Resources;
-using IndianaExpedition.Styling;
 
 namespace IndianaExpedition.Browser
 {
@@ -17,38 +15,23 @@ namespace IndianaExpedition.Browser
                 throw new ArgumentNullException(nameof(model));
             }
 
-            var definition = new PageContextMenuDefinition(
-                new ContextMenuStrip { Renderer = new XpToolStripRenderer() });
-            var back = definition.AddCommand(Strings.ContextBack, GoBack);
-            back.Enabled = CoreWebView?.CanGoBack == true;
-            var forward = definition.AddCommand(Strings.ContextForward, GoForward);
-            forward.Enabled = CoreWebView?.CanGoForward == true;
-            definition.AddCommand(Strings.ContextRefresh, RefreshPage);
-            definition.AddSeparator();
-
-            if (model.HasLink)
-            {
-                definition.AddCommand(
-                    Strings.ContextOpenLinkNewWindow,
-                    () => _application.OpenWindow(model.LinkUri));
-                definition.AddCommand(
-                    Strings.ContextCopyShortcut,
-                    () => Clipboard.SetText(model.LinkUri));
-                definition.AddSeparator();
-            }
-
-            var copy = definition.AddCommand(
-                Strings.ContextCopy,
+            var commands = new PageContextMenuCommandMap();
+            commands.Add(PageContextMenuCommand.Back, GoBack, CoreWebView?.CanGoBack == true);
+            commands.Add(PageContextMenuCommand.Forward, GoForward, CoreWebView?.CanGoForward == true);
+            commands.Add(PageContextMenuCommand.Refresh, RefreshPage);
+            commands.Add(
+                PageContextMenuCommand.OpenLinkNewWindow,
+                () => _application.OpenWindow(model.LinkUri));
+            commands.Add(PageContextMenuCommand.CopyLink, () => Clipboard.SetText(model.LinkUri));
+            commands.Add(
+                PageContextMenuCommand.CopySelection,
                 () => Clipboard.SetText(model.SelectionText));
-            copy.Enabled = model.HasSelection;
-            definition.AddCommand(Strings.ContextSelectAll, () =>
+            commands.Add(PageContextMenuCommand.SelectAll, () =>
                 _ = CoreWebView?.ExecuteScriptAsync(string.Format(
                     CultureInfo.InvariantCulture,
                     BrowserScriptConstants.ExecuteCommandTemplate,
                     BrowserScriptConstants.SelectAllCommand)));
-            definition.AddSeparator();
-            definition.AddDisabledItem(Strings.ContextProperties);
-            return definition;
+            return PageContextMenuFactory.Create(model, commands);
         }
 
         private void ReplaceContextMenuSession(WebViewContextMenuSession session)

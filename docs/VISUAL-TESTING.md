@@ -86,4 +86,6 @@ Release 빌드 또는 이미 빌드된 실행 파일을 검사할 때는 다음 
 
 ## Windows 10 주의 사항
 
-테스트 창에 WinForms의 `ShowInTaskbar = false`를 적용하면 이 환경의 Windows 10 WGC가 창을 캡처 불가능 대상으로 처리했다. 따라서 메인 창과 시각 테스트용 대화상자는 몇 초 동안 작업 표시줄에 표시될 수 있다. 대화상자 상태는 일반 실행의 소유 모달과 달리 테스트에서만 독립 최상위 창으로 만들며, `ShowWithoutActivation`과 `SendToBack`을 함께 적용해 포커스와 전면 표시를 막는다.
+테스트 창에 WinForms의 `ShowInTaskbar = false`를 적용하면 이 환경의 Windows 10 WGC가 창을 캡처 불가능 대상으로 처리했다. 따라서 메인 창과 시각 테스트용 대화상자는 몇 초 동안 작업 표시줄에 표시될 수 있다. 대화상자 상태는 일반 실행의 소유 모달과 달리 테스트에서만 독립 최상위 창으로 만들며, `ShowWithoutActivation`과 `SWP_NOACTIVATE`가 지정된 뒤쪽 Z-order 이동을 함께 적용해 순간적인 포커스 획득과 전면 표시를 막는다.
+
+릴리스 전에는 개별 캡처 대신 `./scripts/verify-release.ps1 -Version 0.3.0`을 사용한다. 이 로컬 게이트는 공통 Release 검증 후 14개 결과 모두가 `CaptureMode=wgc`, `ForegroundUntouched=True`인지 다시 확인하고 배포 ZIP과 체크섬을 생성한다.

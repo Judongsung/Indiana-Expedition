@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndianaExpedition.App", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndianaExpedition.Core.Tests", "tests\IndianaExpedition.Core.Tests\IndianaExpedition.Core.Tests.csproj", "{BA2D6330-B1EE-454A-9239-9F96A9B191E6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndianaExpedition.App.Tests", "tests\IndianaExpedition.App.Tests\IndianaExpedition.App.Tests.csproj", "{7F67C67D-D8B9-4B3C-B864-5A7F8C8D4C32}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndianaExpedition.WgcCapture", "tools\IndianaExpedition.WgcCapture\IndianaExpedition.WgcCapture.csproj", "{DB542EC9-8E85-4B8A-9D3F-E8815204065F}"
 EndProject
 Global
@@ -29,6 +31,10 @@ Global
 		{BA2D6330-B1EE-454A-9239-9F96A9B191E6}.Debug|x64.Build.0 = Debug|Any CPU
 		{BA2D6330-B1EE-454A-9239-9F96A9B191E6}.Release|x64.ActiveCfg = Release|Any CPU
 		{BA2D6330-B1EE-454A-9239-9F96A9B191E6}.Release|x64.Build.0 = Release|Any CPU
+		{7F67C67D-D8B9-4B3C-B864-5A7F8C8D4C32}.Debug|x64.ActiveCfg = Debug|x64
+		{7F67C67D-D8B9-4B3C-B864-5A7F8C8D4C32}.Debug|x64.Build.0 = Debug|x64
+		{7F67C67D-D8B9-4B3C-B864-5A7F8C8D4C32}.Release|x64.ActiveCfg = Release|x64
+		{7F67C67D-D8B9-4B3C-B864-5A7F8C8D4C32}.Release|x64.Build.0 = Release|x64
 		{DB542EC9-8E85-4B8A-9D3F-E8815204065F}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{DB542EC9-8E85-4B8A-9D3F-E8815204065F}.Debug|x64.Build.0 = Debug|Any CPU
 		{DB542EC9-8E85-4B8A-9D3F-E8815204065F}.Release|x64.ActiveCfg = Release|Any CPU

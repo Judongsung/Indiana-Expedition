@@ -59,6 +59,7 @@ namespace IndianaExpedition.Browser
         {
             var menu = new XpMenuStrip
             {
+                Name = UiAutomationIds.Browser.MainMenu,
                 Dock = DockStyle.Fill,
                 Font = this.Font,
                 Renderer = new XpToolStripRenderer(),
@@ -125,7 +126,10 @@ namespace IndianaExpedition.Browser
             view.DropDownItems.Add(new ToolStripSeparator());
             view.DropDownItems.Add(CreateMenuItem(Strings.FullScreen, (s, e) => ToggleFullScreen(), Keys.F11));
 
-            _favoritesMenu = new ToolStripMenuItem(Strings.MenuFavorites);
+            _favoritesMenu = new ToolStripMenuItem(Strings.MenuFavorites)
+            {
+                Name = UiAutomationIds.Browser.FavoritesMenu
+            };
             _favoritesMenu.DropDownItems.Add(CreateMenuItem(Strings.AddFavorite, (s, e) => AddCurrentFavorite(), Keys.Control | Keys.D));
             _favoritesMenu.DropDownItems.Add(CreateMenuItem(Strings.OrganizeFavorites, (s, e) => ShowOrganizeFavoritesDialog()));
             _favoritesMenu.DropDownItems.Add(new ToolStripSeparator());
@@ -152,7 +156,10 @@ namespace IndianaExpedition.Browser
             tools.DropDownItems.Add(new ToolStripSeparator());
             tools.DropDownItems.Add(CreateMenuItem(Strings.InternetOptions, (s, e) => ShowInternetOptionsDialog()));
 
-            _helpMenu = new ToolStripMenuItem(Strings.MenuHelp);
+            _helpMenu = new ToolStripMenuItem(Strings.MenuHelp)
+            {
+                Name = UiAutomationIds.Browser.HelpMenu
+            };
             _helpMenu.DropDownItems.Add(CreateDisabledMenuItem(Strings.Contents));
             _helpMenu.DropDownItems.Add(CreateDisabledMenuItem(Strings.OnlineSupport));
             _helpMenu.DropDownItems.Add(new ToolStripSeparator());
@@ -183,6 +190,8 @@ namespace IndianaExpedition.Browser
             _homeButton = CreateToolbarButton(Strings.ToolbarHome, GlyphKind.Home, (s, e) => GoHome());
             var favoritesButton = CreateToolbarButton(Strings.ToolbarFavorites, GlyphKind.Favorites, (s, e) => ToggleExplorerSidebar(ExplorerMode.Favorites), showText: true);
             var historyButton = CreateToolbarButton(Strings.ToolbarHistory, GlyphKind.History, (s, e) => ToggleExplorerSidebar(ExplorerMode.History), showText: true);
+            favoritesButton.Name = UiAutomationIds.Browser.FavoritesSidebarButton;
+            historyButton.Name = UiAutomationIds.Browser.HistorySidebarButton;
             _explorerButtons[ExplorerMode.Favorites] = favoritesButton;
             _explorerButtons[ExplorerMode.History] = historyButton;
 
@@ -284,6 +293,7 @@ namespace IndianaExpedition.Browser
         {
             var panel = new XpInformationBarPanel
             {
+                Name = UiAutomationIds.Browser.InformationBar,
                 Dock = DockStyle.Fill,
                 Margin = Padding.Empty,
                 Padding = new Padding(4, 4, 4, 4),
@@ -323,6 +333,7 @@ namespace IndianaExpedition.Browser
             };
             _openBlockedPopupButton = new XpButton
             {
+                Name = UiAutomationIds.Browser.OpenBlockedPopupButton,
                 Dock = DockStyle.Fill,
                 Text = Strings.OpenBlockedPopup,
                 Margin = new Padding(2, 0, 2, 0)
@@ -330,6 +341,7 @@ namespace IndianaExpedition.Browser
             _openBlockedPopupButton.Click += (s, e) => OpenOldestBlockedPopup();
             _allowPopupOriginButton = new XpButton
             {
+                Name = UiAutomationIds.Browser.AllowPopupOriginButton,
                 Dock = DockStyle.Fill,
                 Text = Strings.AlwaysAllowPopupSite,
                 Margin = new Padding(2, 0, 2, 0)
@@ -337,6 +349,7 @@ namespace IndianaExpedition.Browser
             _allowPopupOriginButton.Click += (s, e) => AllowOldestPopupOrigin();
             _closeInformationBarButton = new XpButton
             {
+                Name = UiAutomationIds.Browser.CloseInformationBarButton,
                 Dock = DockStyle.Fill,
                 Text = BrowserUiConstants.CloseGlyph,
                 Margin = Padding.Empty,
@@ -357,6 +370,7 @@ namespace IndianaExpedition.Browser
         {
             var split = new SplitContainer
             {
+                Name = UiAutomationIds.Browser.ContentSplit,
                 Dock = DockStyle.Fill,
                 Margin = Padding.Empty,
                 Orientation = Orientation.Vertical,

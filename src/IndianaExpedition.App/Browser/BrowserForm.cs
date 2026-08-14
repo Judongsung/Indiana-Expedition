@@ -242,7 +242,7 @@ namespace IndianaExpedition.Browser
         {
             if (_visualTestMode)
             {
-                SendToBack();
+                SendBehindWithoutActivation();
                 PrepareVisualTestSurface();
                 return;
             }

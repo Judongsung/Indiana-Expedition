@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using IndianaExpedition.Constants;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 
@@ -36,9 +37,21 @@ namespace IndianaExpedition.Find
             StartPosition = FormStartPosition.CenterParent;
 
             var termLabel = new Label { Text = Strings.FindWhat, AutoSize = true, Location = new Point(16, 20) };
-            _termBox = new TextBox { Text = criteria.Term, Location = new Point(16, 44), Size = new Size(326, 23) };
+            _termBox = new TextBox
+            {
+                Name = UiAutomationIds.PageFind.Term,
+                Text = criteria.Term,
+                Location = new Point(16, 44),
+                Size = new Size(326, 23)
+            };
             _termBox.TextChanged += (sender, args) => UpdateFindButton();
-            _findButton = new XpButton { Text = Strings.FindNext, Location = new Point(354, 42), Size = new Size(102, 27) };
+            _findButton = new XpButton
+            {
+                Name = UiAutomationIds.PageFind.FindNextButton,
+                Text = Strings.FindNext,
+                Location = new Point(354, 42),
+                Size = new Size(102, 27)
+            };
             _findButton.Click += async (sender, args) => await FindNextAsync().ConfigureAwait(true);
 
             var directionGroup = new GroupBox { Text = Strings.FindDirection, Location = new Point(16, 82), Size = new Size(206, 82) };

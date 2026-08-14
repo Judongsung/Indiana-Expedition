@@ -11,11 +11,8 @@ namespace IndianaExpedition.Styling
             _suppressMouseUp = false;
 
             var menuItem = GetItemAt(args.Location) as ToolStripMenuItem;
-            if (args.Button == MouseButtons.Left && menuItem?.DropDown.Visible == true)
+            if (TryCloseOpenDropDown(menuItem, args.Button))
             {
-                _suppressMouseUp = true;
-                menuItem.HideDropDown();
-                menuItem.Invalidate();
                 return;
             }
 
@@ -31,6 +28,21 @@ namespace IndianaExpedition.Styling
             }
 
             base.OnMouseUp(args);
+        }
+
+        internal bool TryCloseOpenDropDown(
+            ToolStripMenuItem menuItem,
+            MouseButtons mouseButton)
+        {
+            if (mouseButton != MouseButtons.Left || menuItem?.DropDown.Visible != true)
+            {
+                return false;
+            }
+
+            _suppressMouseUp = true;
+            menuItem.HideDropDown();
+            menuItem.Invalidate();
+            return true;
         }
     }
 }
