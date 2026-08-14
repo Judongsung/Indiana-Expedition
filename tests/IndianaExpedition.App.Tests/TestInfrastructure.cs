@@ -108,29 +108,49 @@ namespace IndianaExpedition.App.Tests
         private const uint WinEventOutOfContext = 0x0000;
         private readonly uint _processId = unchecked((uint)Process.GetCurrentProcess().Id);
         private readonly WinEventDelegate _callback;
-        private readonly IntPtr _hook;
+        private GCHandle _callbackHandle;
+        private IntPtr _hook;
         private long _violatingWindow;
         private string _violationDescription;
+        private bool _disposed;
 
         internal ForegroundWindowGuard()
         {
-            _callback = OnWinEvent;
-            _hook = SetWinEventHook(
-                EventSystemForeground,
-                EventSystemForeground,
-                IntPtr.Zero,
-                _callback,
-                0,
-                0,
-                WinEventOutOfContext);
-            if (_hook == IntPtr.Zero)
+            if (!Application.MessageLoop)
             {
-                throw new Win32Exception(
-                    Marshal.GetLastWin32Error(),
-                    "전경 창 변경 감시 훅을 설치하지 못했습니다.");
+                throw new InvalidOperationException(
+                    "전경 창 감시 훅은 실행 중인 WinForms 메시지 루프에서 설치해야 합니다.");
             }
-            Observe(GetForegroundWindow());
-            ThrowIfViolated();
+
+            _callback = OnWinEvent;
+            _callbackHandle = GCHandle.Alloc(_callback);
+            try
+            {
+                _hook = SetWinEventHook(
+                    EventSystemForeground,
+                    EventSystemForeground,
+                    IntPtr.Zero,
+                    _callback,
+                    0,
+                    0,
+                    WinEventOutOfContext);
+                if (_hook == IntPtr.Zero)
+                {
+                    throw new Win32Exception(
+                        Marshal.GetLastWin32Error(),
+                        "전경 창 변경 감시 훅을 설치하지 못했습니다.");
+                }
+                Observe(GetForegroundWindow());
+                ThrowIfViolated();
+            }
+            catch
+            {
+                if (_callbackHandle.IsAllocated)
+                {
+                    _callbackHandle.Free();
+                }
+                throw;
+            }
         }
 
         internal void ThrowIfViolated()
@@ -147,10 +167,28 @@ namespace IndianaExpedition.App.Tests
 
         public void Dispose()
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             if (_hook != IntPtr.Zero)
             {
-                UnhookWinEvent(_hook);
+                if (!UnhookWinEvent(_hook))
+                {
+                    throw new Win32Exception(
+                        Marshal.GetLastWin32Error(),
+                        "전경 창 변경 감시 훅을 해제하지 못했습니다.");
+                }
+                _hook = IntPtr.Zero;
             }
+
+            GC.KeepAlive(_callback);
+            if (_callbackHandle.IsAllocated)
+            {
+                _callbackHandle.Free();
+            }
+            _disposed = true;
         }
 
         private void OnWinEvent(
@@ -222,7 +260,7 @@ namespace IndianaExpedition.App.Tests
             uint threadId,
             uint flags);
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool UnhookWinEvent(IntPtr hook);
     }
@@ -322,6 +360,7 @@ namespace IndianaExpedition.App.Tests
 
     internal static class TestConstants
     {
+        internal const uint SuppressGeneralProtectionFaultErrorBox = 0x0002;
         internal const int EventPumpPasses = 3;
         internal const int WindowTextCapacity = 512;
     }

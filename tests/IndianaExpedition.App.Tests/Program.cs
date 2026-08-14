@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace IndianaExpedition.App.Tests
@@ -26,43 +27,111 @@ namespace IndianaExpedition.App.Tests
         [STAThread]
         private static int Main()
         {
+            SetErrorMode(TestConstants.SuppressGeneralProtectionFaultErrorBox);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
 
-            var failures = new List<string>();
-            using (var foregroundGuard = new ForegroundWindowGuard())
+            using (var runner = new TestApplicationContext())
             {
-                foreach (var testCase in TestCases)
+                try
                 {
-                    try
-                    {
-                        using (var context = new TestContext(foregroundGuard))
-                        {
-                            testCase.Execute(context);
-                            context.PumpEvents();
-                        }
-                        foregroundGuard.ThrowIfViolated();
-                        Console.WriteLine("PASS: " + testCase.Name);
-                    }
-                    catch (Exception exception)
-                    {
-                        failures.Add(testCase.Name + ": " + exception.Message);
-                    }
+                    Application.Run(runner);
+                    return runner.ExitCode;
+                }
+                catch (Exception exception)
+                {
+                    Console.Error.WriteLine("FAIL: App 동작 테스트 러너 오류: " + exception);
+                    return 1;
+                }
+            }
+        }
+
+        [DllImport("kernel32.dll")]
+        private static extern uint SetErrorMode(uint mode);
+
+        private sealed class TestApplicationContext : ApplicationContext
+        {
+            private bool _started;
+
+            internal TestApplicationContext()
+            {
+                ExitCode = 1;
+                Application.Idle += OnApplicationIdle;
+            }
+
+            internal int ExitCode { get; private set; }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    Application.Idle -= OnApplicationIdle;
+                }
+                base.Dispose(disposing);
+            }
+
+            private void OnApplicationIdle(object sender, EventArgs args)
+            {
+                if (_started)
+                {
+                    return;
+                }
+
+                _started = true;
+                Application.Idle -= OnApplicationIdle;
+                try
+                {
+                    ExitCode = RunTests();
+                }
+                catch (Exception exception)
+                {
+                    Console.Error.WriteLine("FAIL: App 동작 테스트 실행 오류: " + exception);
+                    ExitCode = 1;
+                }
+                finally
+                {
+                    ExitThread();
                 }
             }
 
-            if (failures.Count == 0)
+            private static int RunTests()
             {
-                Console.WriteLine("PASS: IndianaExpedition.App 동작 테스트가 모두 통과했습니다.");
-                return 0;
-            }
+                var failures = new List<string>();
+                using (var foregroundGuard = new ForegroundWindowGuard())
+                {
+                    foreach (var testCase in TestCases)
+                    {
+                        try
+                        {
+                            using (var context = new TestContext(foregroundGuard))
+                            {
+                                testCase.Execute(context);
+                                context.PumpEvents();
+                            }
+                            foregroundGuard.ThrowIfViolated();
+                            Console.WriteLine("PASS: " + testCase.Name);
+                        }
+                        catch (Exception exception)
+                        {
+                            failures.Add(testCase.Name + ": " + exception.Message);
+                        }
+                    }
+                }
 
-            Console.Error.WriteLine("FAIL: " + failures.Count + "개 App 동작 테스트가 실패했습니다.");
-            foreach (var failure in failures)
-            {
-                Console.Error.WriteLine(" - " + failure);
+                if (failures.Count == 0)
+                {
+                    Console.WriteLine("PASS: IndianaExpedition.App 동작 테스트가 모두 통과했습니다.");
+                    return 0;
+                }
+
+                Console.Error.WriteLine("FAIL: " + failures.Count + "개 App 동작 테스트가 실패했습니다.");
+                foreach (var failure in failures)
+                {
+                    Console.Error.WriteLine(" - " + failure);
+                }
+                return 1;
             }
-            return 1;
         }
 
         private sealed class TestCase

@@ -19,8 +19,6 @@ namespace IndianaExpedition.ContextMenus
 
         internal ContextMenuStrip Menu { get; }
 
-        internal event EventHandler<PageContextMenuCommandEventArgs> CommandInvoked;
-
         internal ToolStripItem AddCommand(
             PageContextMenuCommand command,
             string text,
@@ -37,7 +35,6 @@ namespace IndianaExpedition.ContextMenus
                 Name = UiAutomationIds.ContextMenu.Command(command),
                 Enabled = enabled
             };
-            item.Click += OnCommandClicked;
             Menu.Items.Add(item);
             _commands.Add(item, execute);
             _items.Add(command, item);
@@ -75,24 +72,15 @@ namespace IndianaExpedition.ContextMenus
             return _items.ContainsKey(command);
         }
 
-        private void OnCommandClicked(object sender, EventArgs args)
+        internal bool TryGetCommand(ToolStripItem item, out Action execute)
         {
-            if (sender is ToolStripItem item &&
-                item.Enabled &&
-                _commands.TryGetValue(item, out var execute))
+            if (item == null)
             {
-                CommandInvoked?.Invoke(this, new PageContextMenuCommandEventArgs(execute));
+                execute = null;
+                return false;
             }
-        }
-    }
 
-    internal sealed class PageContextMenuCommandEventArgs : EventArgs
-    {
-        internal PageContextMenuCommandEventArgs(Action execute)
-        {
-            Execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            return _commands.TryGetValue(item, out execute);
         }
-
-        internal Action Execute { get; }
     }
 }

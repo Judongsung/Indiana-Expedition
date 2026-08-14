@@ -25,7 +25,7 @@ namespace IndianaExpedition.ContextMenus
             _deferral = deferral ?? throw new ArgumentNullException(nameof(deferral));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _owner = owner ?? throw new ArgumentNullException(nameof(owner));
-            _definition.CommandInvoked += OnCommandInvoked;
+            _menu.ItemClicked += OnItemClicked;
             _menu.Closed += OnMenuClosed;
         }
 
@@ -51,9 +51,13 @@ namespace IndianaExpedition.ContextMenus
             CompleteSession(_selectedCommand);
         }
 
-        private void OnCommandInvoked(object sender, PageContextMenuCommandEventArgs args)
+        private void OnItemClicked(object sender, ToolStripItemClickedEventArgs args)
         {
-            _selectedCommand = args.Execute;
+            _selectedCommand = null;
+            if (args?.ClickedItem?.Enabled == true)
+            {
+                _definition.TryGetCommand(args.ClickedItem, out _selectedCommand);
+            }
         }
 
         private void OnMenuClosed(object sender, ToolStripDropDownClosedEventArgs args)
@@ -69,7 +73,7 @@ namespace IndianaExpedition.ContextMenus
             }
 
             _disposed = true;
-            _definition.CommandInvoked -= OnCommandInvoked;
+            _menu.ItemClicked -= OnItemClicked;
             _menu.Closed -= OnMenuClosed;
             var deferralCompleted = false;
             try
@@ -98,7 +102,7 @@ namespace IndianaExpedition.ContextMenus
             ContextMenuStrip menu,
             Action command)
         {
-            if (command == null || owner == null || owner.IsDisposed || !owner.IsHandleCreated)
+            if (owner == null || owner.IsDisposed || !owner.IsHandleCreated)
             {
                 menu.Dispose();
                 return;
@@ -112,7 +116,7 @@ namespace IndianaExpedition.ContextMenus
                 }
                 finally
                 {
-                    command();
+                    command?.Invoke();
                 }
             });
             if (!posted)
