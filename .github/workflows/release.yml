@@ -19,7 +19,7 @@ concurrency:
 jobs:
   draft-release:
     name: Build Draft Release
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       REQUESTED_VERSION: ${{ inputs.version }}
       GH_TOKEN: ${{ github.token }}
