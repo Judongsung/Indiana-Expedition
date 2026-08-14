@@ -14,8 +14,11 @@ $appTestsPath = Join-Path `
     "tests\IndianaExpedition.App.Tests\bin\x64\Release\net48\IndianaExpedition.App.Tests.exe"
 $buildReleaseScript = Join-Path $PSScriptRoot "build-release.ps1"
 $verifyVersionScript = Join-Path $PSScriptRoot "verify-version.ps1"
+$resolveMsBuildScript = Join-Path $PSScriptRoot "resolve-msbuild.ps1"
+$msbuildPath = & $resolveMsBuildScript
 
 Write-Host "검증 SDK: $(& dotnet --version)"
+Write-Host "검증 MSBuild: $msbuildPath"
 
 Write-Host "[1/6] 솔루션 복원"
 & dotnet restore $solutionPath "-p:Platform=x64"
@@ -24,7 +27,14 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "[2/6] Release/x64 솔루션 빌드"
-& dotnet build $solutionPath -c Release "-p:Platform=x64" --no-restore
+& $msbuildPath `
+    $solutionPath `
+    "/m" `
+    "/nr:false" `
+    "/t:Build" `
+    "/p:Configuration=Release" `
+    "/p:Platform=x64" `
+    "/verbosity:minimal"
 if ($LASTEXITCODE -ne 0) {
     throw "Release/x64 솔루션 빌드에 실패했습니다."
 }

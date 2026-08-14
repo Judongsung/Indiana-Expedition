@@ -7,6 +7,8 @@ param(
 $ErrorActionPreference = "Stop"
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot "release-layout.ps1")
+$resolveMsBuildScript = Join-Path $PSScriptRoot "resolve-msbuild.ps1"
+$msbuildPath = & $resolveMsBuildScript
 $project = Join-Path $repositoryRoot "src\IndianaExpedition.App\IndianaExpedition.App.csproj"
 $artifactsRoot = Join-Path $repositoryRoot $releaseLayout.ArtifactsDirectoryName
 $artifactDirectory = Join-Path $artifactsRoot $releaseLayout.ReleaseDirectoryName
@@ -34,17 +36,20 @@ if (Test-Path -LiteralPath $resolvedArtifactDirectory) {
 New-Item -ItemType Directory -Path $resolvedArtifactDirectory -Force | Out-Null
 
 $buildArguments = @(
-    "build",
     $project,
-    "-c", $Configuration,
-    "-p:Platform=x64",
-    "-p:OutDir=$resolvedArtifactDirectory\"
+    "/m",
+    "/nr:false",
+    "/t:Build",
+    "/p:Configuration=$Configuration",
+    "/p:Platform=x64",
+    "/p:OutDir=$resolvedArtifactDirectory\",
+    "/verbosity:minimal"
 )
-if ($NoRestore) {
-    $buildArguments += "--no-restore"
+if (-not $NoRestore) {
+    $buildArguments += "/restore"
 }
 
-& dotnet @buildArguments
+& $msbuildPath @buildArguments
 
 if ($LASTEXITCODE -ne 0) {
     throw "Indiana Expedition Release 빌드에 실패했습니다."
