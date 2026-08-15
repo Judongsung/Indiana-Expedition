@@ -15,6 +15,7 @@ namespace IndianaExpedition
     {
         private readonly BrowserApplicationServices _services;
         private readonly ApplicationLaunchOptions _launchOptions;
+        private readonly object _windowsGate = new object();
         private readonly HashSet<BrowserForm> _windows = new HashSet<BrowserForm>();
         private readonly Task<CoreWebView2Environment> _environmentTask;
         private readonly DownloadCoordinator _downloads;
@@ -28,7 +29,11 @@ namespace IndianaExpedition
         {
             _services = services ?? throw new ArgumentNullException(nameof(services));
             _launchOptions = launchOptions ?? throw new ArgumentNullException(nameof(launchOptions));
-            _downloads = new DownloadCoordinator(services.Settings, services.Downloads);
+            _downloads = new DownloadCoordinator(
+                services.Settings,
+                services.Downloads,
+                launchOptions.ExternalLauncher);
+            _services.PersistenceWriteFailed += OnPersistenceWriteFailed;
             _environmentTask = launchOptions.IsVisualTestMode
                 ? Task.FromResult<CoreWebView2Environment>(null)
                 : CoreWebView2Environment.CreateAsync(
@@ -56,7 +61,10 @@ namespace IndianaExpedition
                 : initialUrl;
 
             var window = new BrowserForm(this, target, _launchOptions);
-            _windows.Add(window);
+            lock (_windowsGate)
+            {
+                _windows.Add(window);
+            }
             window.FormClosed += OnWindowClosed;
             window.Show();
             return window;
@@ -113,13 +121,19 @@ namespace IndianaExpedition
             if (sender is BrowserForm window)
             {
                 window.FormClosed -= OnWindowClosed;
-                _windows.Remove(window);
+                lock (_windowsGate)
+                {
+                    _windows.Remove(window);
+                }
                 window.Dispose();
             }
 
-            if (_windows.Count == 0)
+            lock (_windowsGate)
             {
-                ExitThread();
+                if (_windows.Count == 0)
+                {
+                    ExitThread();
+                }
             }
         }
 
@@ -132,16 +146,36 @@ namespace IndianaExpedition
 
             if (disposing)
             {
-                foreach (var window in new List<BrowserForm>(_windows))
+                List<BrowserForm> windows;
+                lock (_windowsGate)
+                {
+                    windows = new List<BrowserForm>(_windows);
+                    _windows.Clear();
+                }
+                foreach (var window in windows)
                 {
                     window.Close();
                 }
-                _windows.Clear();
                 _downloads.Dispose();
+                _services.PersistenceWriteFailed -= OnPersistenceWriteFailed;
+                _services.Dispose();
             }
 
             _disposed = true;
             base.Dispose(disposing);
+        }
+
+        private void OnPersistenceWriteFailed(object sender, Core.Persistence.PersistenceWriteFailedEventArgs args)
+        {
+            List<BrowserForm> windows;
+            lock (_windowsGate)
+            {
+                windows = new List<BrowserForm>(_windows);
+            }
+            foreach (var window in windows)
+            {
+                window.ShowPersistenceWriteFailure();
+            }
         }
     }
 }

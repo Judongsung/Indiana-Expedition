@@ -298,7 +298,9 @@ namespace IndianaExpedition.Resources
         internal static string DeleteSelected => Get(nameof(DeleteSelected));
         internal static string BrowsingDataDeleted => Get(nameof(BrowsingDataDeleted));
         internal static string BrowsingDataDeleteFailedFormat => Get(nameof(BrowsingDataDeleteFailedFormat));
+        internal static string BrowsingDataItemDeleteFailedFormat => Get(nameof(BrowsingDataItemDeleteFailedFormat));
         internal static string BrowsingDataApplicationPartialFailureFormat => Get(nameof(BrowsingDataApplicationPartialFailureFormat));
         internal static string DeleteBrowsingDataButton => Get(nameof(DeleteBrowsingDataButton));
+        internal static string PersistenceWriteFailedStatus => Get(nameof(PersistenceWriteFailedStatus));
     }
 }

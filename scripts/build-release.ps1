@@ -1,7 +1,9 @@
 param(
     [string]$Configuration = "Release",
 
-    [switch]$NoRestore
+    [switch]$NoRestore,
+
+    [switch]$StageOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,6 +12,9 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $resolveMsBuildScript = Join-Path $PSScriptRoot "resolve-msbuild.ps1"
 $msbuildPath = & $resolveMsBuildScript
 $project = Join-Path $repositoryRoot "src\IndianaExpedition.App\IndianaExpedition.App.csproj"
+$sourceOutputDirectory = Join-Path `
+    $repositoryRoot `
+    "src\IndianaExpedition.App\bin\x64\$Configuration\net48"
 $artifactsRoot = Join-Path $repositoryRoot $releaseLayout.ArtifactsDirectoryName
 $artifactDirectory = Join-Path $artifactsRoot $releaseLayout.ReleaseDirectoryName
 $resolvedArtifactsRoot = [System.IO.Path]::GetFullPath($artifactsRoot)
@@ -33,26 +38,39 @@ if (Test-Path -LiteralPath $resolvedArtifactDirectory) {
     Remove-Item -LiteralPath $resolvedArtifactDirectory -Recurse -Force
 }
 
-New-Item -ItemType Directory -Path $resolvedArtifactDirectory -Force | Out-Null
-
-$buildArguments = @(
-    $project,
-    "/m",
-    "/nr:false",
-    "/t:Build",
-    "/p:Configuration=$Configuration",
-    "/p:Platform=x64",
-    "/p:OutDir=$resolvedArtifactDirectory\",
-    "/verbosity:minimal"
-)
-if (-not $NoRestore) {
-    $buildArguments += "/restore"
+if (-not $StageOnly) {
+    $buildArguments = @(
+        $project,
+        "/m",
+        "/nr:false",
+        "/t:Build",
+        "/p:Configuration=$Configuration",
+        "/p:Platform=x64",
+        "/verbosity:minimal"
+    )
+    if (-not $NoRestore) {
+        $buildArguments += "/restore"
+    }
+    & $msbuildPath @buildArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Indiana Expedition Release 빌드에 실패했습니다."
+    }
 }
 
-& $msbuildPath @buildArguments
+if (-not (Test-Path -LiteralPath $sourceOutputDirectory)) {
+    throw "검증된 App 출력 폴더가 없습니다: $sourceOutputDirectory"
+}
 
-if ($LASTEXITCODE -ne 0) {
-    throw "Indiana Expedition Release 빌드에 실패했습니다."
+New-Item -ItemType Directory -Path $resolvedArtifactDirectory -Force | Out-Null
+foreach ($file in $releaseLayout.RequiredFiles) {
+    $sourcePath = Join-Path $sourceOutputDirectory $file
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+        throw "App 출력에 배포 파일이 없습니다: $file"
+    }
+    $destinationPath = Join-Path $resolvedArtifactDirectory $file
+    $destinationParent = Split-Path -Parent $destinationPath
+    New-Item -ItemType Directory -Path $destinationParent -Force | Out-Null
+    Copy-Item -LiteralPath $sourcePath -Destination $destinationPath
 }
 
 foreach ($file in $releaseLayout.RequiredFiles) {

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
-using Microsoft.Win32;
 using IndianaExpedition.Core.Constants;
 
 namespace IndianaExpedition.Core.Models
@@ -70,7 +69,7 @@ namespace IndianaExpedition.Core.Models
                 HomeUrl = BrowserDefaults.HomeUrl,
                 SearchUrlTemplate = BrowserDefaults.SearchUrlTemplate,
                 StartupMode = StartupMode.Home,
-                DownloadDirectory = KnownFolders.GetDownloadsDirectory(),
+                DownloadDirectory = GetConventionalDownloadsDirectory(),
                 ShowLinksBar = false,
                 ShowStatusBar = true,
                 PopupBlockerEnabled = true,
@@ -78,6 +77,13 @@ namespace IndianaExpedition.Core.Models
                 DefaultZoomLevel = BrowserZoomLevel.Medium,
                 AskWhereToSaveDownloads = false
             };
+        }
+
+        private static string GetConventionalDownloadsDirectory()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                WindowsIntegrationConstants.DownloadsFallbackDirectoryName);
         }
 
         public BrowserSettings Clone()
@@ -100,30 +106,4 @@ namespace IndianaExpedition.Core.Models
         }
     }
 
-    internal static class KnownFolders
-    {
-        public static string GetDownloadsDirectory()
-        {
-            try
-            {
-                using (var key = Registry.CurrentUser.OpenSubKey(
-                    WindowsIntegrationConstants.UserShellFoldersRegistryPath))
-                {
-                    var value = key?.GetValue(WindowsIntegrationConstants.DownloadsFolderId) as string;
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        return Environment.ExpandEnvironmentVariables(value);
-                    }
-                }
-            }
-            catch
-            {
-                // Fall back to the conventional path when the shell setting is unavailable.
-            }
-
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                WindowsIntegrationConstants.DownloadsFallbackDirectoryName);
-        }
-    }
 }

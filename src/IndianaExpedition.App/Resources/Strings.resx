@@ -303,6 +303,8 @@
   <data name="DeleteSelected" xml:space="preserve"><value>삭제(&amp;D)</value></data>
   <data name="BrowsingDataDeleted" xml:space="preserve"><value>선택한 검색 기록을 삭제했습니다.</value></data>
   <data name="BrowsingDataDeleteFailedFormat" xml:space="preserve"><value>브라우저 데이터를 삭제하지 못했습니다.&#xA;&#xA;{0}</value></data>
+  <data name="BrowsingDataItemDeleteFailedFormat" xml:space="preserve"><value>{0} 삭제 단계가 실패했습니다.</value></data>
   <data name="BrowsingDataApplicationPartialFailureFormat" xml:space="preserve"><value>일부 브라우저 데이터는 삭제했지만 다음 앱 데이터를 삭제하지 못했습니다.&#xA;&#xA;{0}</value></data>
   <data name="DeleteBrowsingDataButton" xml:space="preserve"><value>삭제(&amp;D)...</value></data>
+  <data name="PersistenceWriteFailedStatus" xml:space="preserve"><value>일부 브라우저 데이터를 저장하지 못했습니다.</value></data>
 </root>

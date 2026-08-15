@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Forms;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Models;
@@ -18,6 +19,9 @@ namespace IndianaExpedition.Favorites
         private readonly Button _renameButton;
         private readonly Button _moveButton;
         private readonly Button _deleteButton;
+        private readonly ImageList _images;
+        private readonly Dictionary<Guid, TreeNode> _treeNodesById =
+            new Dictionary<Guid, TreeNode>();
 
         internal OrganizeFavoritesDialog(FavoritesService favorites)
         {
@@ -28,14 +32,14 @@ namespace IndianaExpedition.Favorites
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
 
-            var images = new ImageList { ImageSize = new Size(16, 16), ColorDepth = ColorDepth.Depth32Bit };
-            images.Images.Add(XpGlyphs.Create(GlyphKind.Folder, 16));
-            images.Images.Add(XpGlyphs.Create(GlyphKind.Page, 16));
+            _images = new ImageList { ImageSize = new Size(16, 16), ColorDepth = ColorDepth.Depth32Bit };
+            _images.Images.Add(XpGlyphs.Create(GlyphKind.Folder, 16));
+            _images.Images.Add(XpGlyphs.Create(GlyphKind.Page, 16));
 
             _tree = new TreeView
             {
                 Dock = DockStyle.Fill,
-                ImageList = images,
+                ImageList = _images,
                 HideSelection = false,
                 BorderStyle = BorderStyle.Fixed3D
             };
@@ -96,15 +100,17 @@ namespace IndianaExpedition.Favorites
             try
             {
                 _tree.Nodes.Clear();
-                foreach (var favorite in _favorites.Items)
-                {
-                    _tree.Nodes.Add(CreateNode(favorite));
-                }
+                _treeNodesById.Clear();
+                _tree.Nodes.AddRange(
+                    FavoriteTreeNodeFactory.Build(
+                        FavoriteProjection.Build(_favorites.Items),
+                        (favorite, node) => _treeNodesById[favorite.Id] = node).ToArray());
                 _tree.ExpandAll();
 
                 if (selectId.HasValue)
                 {
-                    _tree.SelectedNode = FindTreeNode(_tree.Nodes, selectId.Value);
+                    _treeNodesById.TryGetValue(selectId.Value, out var selectedNode);
+                    _tree.SelectedNode = selectedNode;
                 }
             }
             finally
@@ -112,19 +118,6 @@ namespace IndianaExpedition.Favorites
                 _tree.EndUpdate();
             }
             UpdateButtonState();
-        }
-
-        private static TreeNode CreateNode(FavoriteNode favorite)
-        {
-            var image = favorite.Kind == FavoriteNodeKind.Folder
-                ? BrowserUiConstants.FolderImageIndex
-                : BrowserUiConstants.PageImageIndex;
-            var node = new TreeNode(favorite.Title, image, image) { Tag = favorite };
-            foreach (var child in favorite.Children ?? new List<FavoriteNode>())
-            {
-                node.Nodes.Add(CreateNode(child));
-            }
-            return node;
         }
 
         private void UpdateButtonState()
@@ -244,22 +237,14 @@ namespace IndianaExpedition.Favorites
             }
         }
 
-        private static TreeNode FindTreeNode(TreeNodeCollection nodes, Guid id)
+        protected override void Dispose(bool disposing)
         {
-            foreach (TreeNode node in nodes)
+            if (disposing)
             {
-                if (node.Tag is FavoriteNode favorite && favorite.Id == id)
-                {
-                    return node;
-                }
-
-                var child = FindTreeNode(node.Nodes, id);
-                if (child != null)
-                {
-                    return child;
-                }
+                _tree.ImageList = null;
+                _images.Dispose();
             }
-            return null;
+            base.Dispose(disposing);
         }
     }
 }

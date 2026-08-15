@@ -77,5 +77,18 @@ namespace IndianaExpedition.Core.Models
                 Items = new List<DownloadRecord>()
             };
         }
+
+        internal DownloadHistoryDocument DeepClone()
+        {
+            var clone = new DownloadHistoryDocument { SchemaVersion = SchemaVersion };
+            foreach (var item in Items ?? new List<DownloadRecord>())
+            {
+                if (item != null)
+                {
+                    clone.Items.Add(item.Clone());
+                }
+            }
+            return clone;
+        }
     }
 }

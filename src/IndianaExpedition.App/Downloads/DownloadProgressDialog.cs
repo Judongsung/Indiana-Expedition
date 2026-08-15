@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -8,12 +7,14 @@ using IndianaExpedition.Constants;
 using IndianaExpedition.Dialogs;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.Downloads
 {
     internal sealed class DownloadProgressDialog : LunaForm
     {
         private readonly IDownloadController _controller;
+        private readonly IExternalLauncher _externalLauncher;
         private readonly Label _stateLabel;
         private readonly Label _progressLabel;
         private readonly Label _estimateLabel;
@@ -27,9 +28,11 @@ namespace IndianaExpedition.Downloads
 
         internal DownloadProgressDialog(
             IDownloadController controller,
-            bool preventActivationOnShow = false)
+            bool preventActivationOnShow = false,
+            IExternalLauncher externalLauncher = null)
         {
             _controller = controller ?? throw new ArgumentNullException(nameof(controller));
+            _externalLauncher = externalLauncher ?? new ShellExternalLauncher();
             PreventActivationOnShow = preventActivationOnShow;
             Text = Strings.DownloadProgressTitle;
             SetContentClientSize(520, 270);
@@ -289,7 +292,7 @@ namespace IndianaExpedition.Downloads
             OpenPath(Path.GetDirectoryName(_controller.FilePath));
         }
 
-        private static void OpenPath(string path)
+        private void OpenPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -298,7 +301,7 @@ namespace IndianaExpedition.Downloads
 
             try
             {
-                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+                _externalLauncher.Open(path);
             }
             catch (Exception ex)
             {

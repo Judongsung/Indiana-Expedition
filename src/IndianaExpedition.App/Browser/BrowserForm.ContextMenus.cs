@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows.Forms;
 using IndianaExpedition.ContextMenus;
 using IndianaExpedition.Constants;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.Browser
 {
@@ -16,21 +17,27 @@ namespace IndianaExpedition.Browser
             }
 
             var commands = new PageContextMenuCommandMap();
-            commands.Add(PageContextMenuCommand.Back, GoBack, CoreWebView?.CanGoBack == true);
-            commands.Add(PageContextMenuCommand.Forward, GoForward, CoreWebView?.CanGoForward == true);
-            commands.Add(PageContextMenuCommand.Refresh, RefreshPage);
+            commands.Add(
+                PageContextMenuCommand.Back,
+                () => _commandRouter.Execute(BrowserCommandId.Back),
+                _commandCatalog.Get(BrowserCommandId.Back).CanExecute());
+            commands.Add(
+                PageContextMenuCommand.Forward,
+                () => _commandRouter.Execute(BrowserCommandId.Forward),
+                _commandCatalog.Get(BrowserCommandId.Forward).CanExecute());
+            commands.Add(
+                PageContextMenuCommand.Refresh,
+                () => _commandRouter.Execute(BrowserCommandId.Refresh));
             commands.Add(
                 PageContextMenuCommand.OpenLinkNewWindow,
                 () => _application.OpenWindow(model.LinkUri));
-            commands.Add(PageContextMenuCommand.CopyLink, () => Clipboard.SetText(model.LinkUri));
+            commands.Add(PageContextMenuCommand.CopyLink, () => _clipboardService.SetText(model.LinkUri));
             commands.Add(
                 PageContextMenuCommand.CopySelection,
-                () => Clipboard.SetText(model.SelectionText));
-            commands.Add(PageContextMenuCommand.SelectAll, () =>
-                _ = CoreWebView?.ExecuteScriptAsync(string.Format(
-                    CultureInfo.InvariantCulture,
-                    BrowserScriptConstants.ExecuteCommandTemplate,
-                    BrowserScriptConstants.SelectAllCommand)));
+                () => _clipboardService.SetText(model.SelectionText));
+            commands.Add(
+                PageContextMenuCommand.SelectAll,
+                () => _commandRouter.Execute(BrowserCommandId.SelectAll));
             return PageContextMenuFactory.Create(model, commands);
         }
 

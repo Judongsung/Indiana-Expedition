@@ -1,0 +1,37 @@
+namespace IndianaExpedition.Commands
+{
+    internal enum BrowserCommandId
+    {
+        NewWindow,
+        OpenLocation,
+        CloseWindow,
+        Print,
+        Cut,
+        Copy,
+        Paste,
+        SelectAll,
+        Find,
+        FindNext,
+        FindPrevious,
+        FocusAddress,
+        Back,
+        Forward,
+        Stop,
+        Refresh,
+        Home,
+        FavoritesSidebar,
+        HistorySidebar,
+        AddFavorite,
+        OrganizeFavorites,
+        Downloads,
+        DeleteBrowsingData,
+        PopupToggle,
+        PopupSettings,
+        InternetOptions,
+        About,
+        FullScreen,
+        ZoomIn,
+        ZoomOut,
+        ZoomReset
+    }
+}

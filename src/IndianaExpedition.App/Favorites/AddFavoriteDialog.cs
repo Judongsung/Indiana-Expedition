@@ -62,35 +62,18 @@ namespace IndianaExpedition.Favorites
 
         private void PopulateFolders()
         {
-            _folderBox.Items.Add(new FolderChoice(null, Strings.FavoriteRoot));
-            foreach (var item in _favorites.Items)
+            foreach (var choice in FavoriteProjection.BuildFolderChoices(_favorites.Items))
             {
-                AddFolderChoices(item, 1);
+                _folderBox.Items.Add(choice);
             }
             _folderBox.SelectedIndex = 0;
-        }
-
-        private void AddFolderChoices(FavoriteNode node, int depth)
-        {
-            if (node.Kind != FavoriteNodeKind.Folder)
-            {
-                return;
-            }
-
-            _folderBox.Items.Add(new FolderChoice(
-                node.Id,
-                new string(BrowserUiConstants.FolderIndentCharacter, depth) + node.Title));
-            foreach (var child in node.Children ?? new List<FavoriteNode>())
-            {
-                AddFolderChoices(child, depth + 1);
-            }
         }
 
         private void OnAddClicked(object sender, EventArgs args)
         {
             try
             {
-                var folder = (FolderChoice)_folderBox.SelectedItem;
+                var folder = (FavoriteFolderChoice)_folderBox.SelectedItem;
                 _favorites.AddLink(folder.Id, _nameBox.Text, _url);
             }
             catch (Exception ex)
@@ -100,19 +83,5 @@ namespace IndianaExpedition.Favorites
             }
         }
 
-        private sealed class FolderChoice
-        {
-            internal FolderChoice(Guid? id, string text)
-            {
-                Id = id;
-                Text = text;
-            }
-
-            internal Guid? Id { get; }
-
-            internal string Text { get; }
-
-            public override string ToString() => Text;
-        }
     }
 }

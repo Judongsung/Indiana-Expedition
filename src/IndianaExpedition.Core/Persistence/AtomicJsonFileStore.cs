@@ -6,7 +6,7 @@ using IndianaExpedition.Core.Constants;
 
 namespace IndianaExpedition.Core.Persistence
 {
-    public sealed class AtomicJsonFileStore<T> where T : class
+    public sealed class AtomicJsonFileStore<T> : IDocumentStore<T> where T : class
     {
         private readonly object _gate = new object();
         private readonly string _path;

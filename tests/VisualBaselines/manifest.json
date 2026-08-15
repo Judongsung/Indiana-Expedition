@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "0d3c3f3",
+  "captureMode": "wgc",
+  "dpi": 96,
+  "thresholds": {
+    "channelDifference": 12,
+    "maximumChangedPixelRatio": 0.02,
+    "maximumMeanAbsoluteRgbError": 2.0
+  },
+  "states": [
+    {
+      "state": "Main",
+      "file": "indiana-expedition-main.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "191EF9318DD1CC12B22EA96042565ED382368A193F46451BDB8DE17C0A792EFF"
+    },
+    {
+      "state": "Favorites",
+      "file": "indiana-expedition-favorites.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "26DD0B4AC9334ED5F26A52918E132BE3D27F58F67AB5451ED98F2B3608AE6EA8"
+    },
+    {
+      "state": "History",
+      "file": "indiana-expedition-history.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "50D6FBF46CA92B05EE175199F154C78FE3B22C57DE29AF9D56B7494E6165FE1D"
+    },
+    {
+      "state": "PopupBlocked",
+      "file": "indiana-expedition-popupblocked.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "26BBCEC4D3005261DE9C1470EE7426674E8F749A7B54FC6A51C954C2B29FD975"
+    },
+    {
+      "state": "FindDialog",
+      "file": "indiana-expedition-finddialog.png",
+      "width": 480,
+      "height": 272,
+      "sha256": "9808183BF74B241BC9D059B4C1FFC51E984E24856F091BC615D94D60FBFFD091"
+    },
+    {
+      "state": "DeleteBrowsingDataDialog",
+      "file": "indiana-expedition-deletebrowsingdatadialog.png",
+      "width": 534,
+      "height": 526,
+      "sha256": "8BC3F4D4E9A837A1ED52D41C3F91126BD1B8CE780A0E577A339990217C0DC08B"
+    },
+    {
+      "state": "DownloadProgressDialog",
+      "file": "indiana-expedition-downloadprogressdialog.png",
+      "width": 528,
+      "height": 304,
+      "sha256": "ECD6146F1C180F985359C2FC84189EA7314FDF4AA5B0F126F93F38F0CB2C9FF2"
+    },
+    {
+      "state": "DownloadCompletedDialog",
+      "file": "indiana-expedition-downloadcompleteddialog.png",
+      "width": 528,
+      "height": 304,
+      "sha256": "28C552AA5AD1EA360170F4FB4C41D0A66CD18692A07EE920C0076F42BFE1AF66"
+    },
+    {
+      "state": "DownloadHistoryDialog",
+      "file": "indiana-expedition-downloadhistorydialog.png",
+      "width": 728,
+      "height": 444,
+      "sha256": "48AF6B62B32D5EFD6F26FB398250A5D46A4BE81F460F29A3E811DA56ED9958E5"
+    },
+    {
+      "state": "PermissionRequestDialog",
+      "file": "indiana-expedition-permissionrequestdialog.png",
+      "width": 528,
+      "height": 280,
+      "sha256": "7CD8C8D0F5DA1411855D8EB7306BD9F15B5F11355B197DA308B0D6E6ED3FCD47"
+    },
+    {
+      "state": "PrivacyTab",
+      "file": "indiana-expedition-privacytab.png",
+      "width": 568,
+      "height": 524,
+      "sha256": "438AB58A5AA6CBD3EEC18A5FA7C7480B6B4DA94B7745DB36002DF9D3F1396FE3"
+    },
+    {
+      "state": "ContextMenu",
+      "file": "indiana-expedition-contextmenu.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "191EF9318DD1CC12B22EA96042565ED382368A193F46451BDB8DE17C0A792EFF"
+    },
+    {
+      "state": "HelpMenu",
+      "file": "indiana-expedition-helpmenu.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "05B2A7EA04D72F49C36FD6353DB828D4CAE48412A859642C7E75463AAB1F14DF"
+    },
+    {
+      "state": "AboutDialog",
+      "file": "indiana-expedition-aboutdialog.png",
+      "width": 508,
+      "height": 320,
+      "sha256": "A40E94871A988B25582F44D2CC6CC682E940A569F98818FB0B725D48695A85D9"
+    }
+  ]
+}

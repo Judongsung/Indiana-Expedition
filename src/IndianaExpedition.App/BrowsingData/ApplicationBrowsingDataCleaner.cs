@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using IndianaExpedition.Core.Services;
 using IndianaExpedition.Resources;
 
@@ -31,27 +34,31 @@ namespace IndianaExpedition.BrowsingData
                     {
                         [BrowsingDataSelection.History] = new ClearDefinition(
                             () => Strings.BrowsingHistoryItem,
-                            history.Clear),
+                            history.ClearAsync),
                         [BrowsingDataSelection.DownloadHistory] = new ClearDefinition(
                             () => Strings.DownloadHistoryItem,
-                            downloads.Clear)
+                            () => Task.Run((Action)downloads.Clear))
                     });
         }
 
-        internal IReadOnlyList<string> Clear(BrowsingDataSelection selection)
+        internal async Task<IReadOnlyList<string>> ClearAsync(BrowsingDataSelection selection)
         {
             var failures = new List<string>();
             foreach (var definition in _definitions
-                .Where(item => selection.HasFlag(item.Key))
+                .Where(item => (selection & item.Key) != 0)
                 .Select(item => item.Value))
             {
                 try
                 {
-                    definition.Clear();
+                    await definition.ClearAsync().ConfigureAwait(true);
                 }
                 catch (Exception ex)
                 {
-                    failures.Add(definition.GetDisplayName() + ": " + ex.Message);
+                    Trace.TraceError(ex.ToString());
+                    failures.Add(string.Format(
+                        CultureInfo.CurrentCulture,
+                        Strings.BrowsingDataItemDeleteFailedFormat,
+                        definition.GetDisplayName()));
                 }
             }
             return failures;
@@ -59,16 +66,16 @@ namespace IndianaExpedition.BrowsingData
 
         private sealed class ClearDefinition
         {
-            internal ClearDefinition(Func<string> getDisplayName, Action clear)
+            internal ClearDefinition(Func<string> getDisplayName, Func<Task> clearAsync)
             {
                 GetDisplayName = getDisplayName ??
                     throw new ArgumentNullException(nameof(getDisplayName));
-                Clear = clear ?? throw new ArgumentNullException(nameof(clear));
+                ClearAsync = clearAsync ?? throw new ArgumentNullException(nameof(clearAsync));
             }
 
             internal Func<string> GetDisplayName { get; }
 
-            internal Action Clear { get; }
+            internal Func<Task> ClearAsync { get; }
         }
     }
 }

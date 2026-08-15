@@ -12,6 +12,26 @@ internal static class Program
     {
         try
         {
+            if (arguments.Length > 0 && string.Equals(
+                arguments[0],
+                CommandLineConstants.CompareCommand,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                var comparisonOptions = ImageComparisonOptions.Parse(arguments);
+                var comparison = ImageComparer.Compare(comparisonOptions);
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    mode = "compare",
+                    dimensionsMatch = comparison.DimensionsMatch,
+                    width = comparison.Width,
+                    height = comparison.Height,
+                    changedPixelRatio = comparison.ChangedPixelRatio,
+                    meanAbsoluteRgbError = comparison.MeanAbsoluteRgbError,
+                    passed = comparison.Passed
+                }));
+                return comparison.Passed ? 0 : 2;
+            }
+
             var options = CaptureOptions.Parse(arguments);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(options.TimeoutSeconds));
             var windowHandle = new HWND(new IntPtr(options.WindowHandle));

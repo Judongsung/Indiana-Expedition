@@ -8,6 +8,7 @@ using IndianaExpedition.Browser;
 using IndianaExpedition.Core.Services;
 using IndianaExpedition.Dialogs;
 using IndianaExpedition.Resources;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.Downloads
 {
@@ -16,6 +17,7 @@ namespace IndianaExpedition.Downloads
         private readonly SettingsService _settings;
         private readonly DownloadHistoryService _history;
         private readonly IDownloadHistoryController _historyController;
+        private readonly IExternalLauncher _externalLauncher;
         private readonly Dictionary<BrowserForm, HashSet<DownloadSession>> _activeSessions =
             new Dictionary<BrowserForm, HashSet<DownloadSession>>();
         private readonly Dictionary<DownloadSession, DownloadProgressDialog> _progressDialogs =
@@ -25,11 +27,13 @@ namespace IndianaExpedition.Downloads
 
         internal DownloadCoordinator(
             SettingsService settings,
-            DownloadHistoryService history)
+            DownloadHistoryService history,
+            IExternalLauncher externalLauncher = null)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _history = history ?? throw new ArgumentNullException(nameof(history));
             _historyController = new DownloadHistoryController(history);
+            _externalLauncher = externalLauncher ?? new ShellExternalLauncher();
         }
 
         internal void StartDownload(
@@ -87,7 +91,9 @@ namespace IndianaExpedition.Downloads
                 return;
             }
 
-            _historyDialog = new DownloadHistoryDialog(_historyController);
+            _historyDialog = new DownloadHistoryDialog(
+                _historyController,
+                externalLauncher: _externalLauncher);
             _historyDialog.FormClosed += OnHistoryDialogClosed;
             _historyDialog.Show(owner);
         }
@@ -165,7 +171,9 @@ namespace IndianaExpedition.Downloads
             session.Changed += (sender, args) => ReportStatus(owner, session);
             session.Finished += (sender, args) => CompleteSession(owner, session);
 
-            var dialog = new DownloadProgressDialog(session);
+            var dialog = new DownloadProgressDialog(
+                session,
+                externalLauncher: _externalLauncher);
             _progressDialogs[session] = dialog;
             dialog.FormClosed += (sender, args) => ReleaseSession(owner, session, dialog);
             dialog.Show(owner);

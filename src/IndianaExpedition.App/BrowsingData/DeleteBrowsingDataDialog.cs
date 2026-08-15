@@ -53,14 +53,14 @@ namespace IndianaExpedition.BrowsingData
                 Size = new Size(490, 282)
             };
 
-            AddOption(group, BrowsingDataSelection.History, Strings.BrowsingHistoryItem, 26, enabled: true);
-            AddOption(group, BrowsingDataSelection.DownloadHistory, Strings.DownloadHistoryItem, 56, enabled: true);
-            AddOption(group, BrowsingDataSelection.DiskCache, Strings.DiskCacheItem, 86, enabled: profileAvailable);
-            AddOption(group, BrowsingDataSelection.Cookies, Strings.CookiesItem, 116, enabled: profileAvailable);
-            AddOption(group, BrowsingDataSelection.SiteStorage, Strings.SiteStorageItem, 146, enabled: profileAvailable);
-            AddOption(group, BrowsingDataSelection.Autofill, Strings.AutofillItem, 176, enabled: profileAvailable);
-            AddOption(group, BrowsingDataSelection.Passwords, Strings.SavedPasswordsItem, 206, enabled: profileAvailable);
-            AddOption(group, BrowsingDataSelection.SitePermissions, Strings.SitePermissionsItem, 236, enabled: sitePermissionsAvailable);
+            var optionTop = 26;
+            foreach (var definition in BrowsingDataCatalog.Definitions)
+            {
+                var enabled = (!definition.RequiresProfile || profileAvailable) &&
+                              (!definition.RequiresSitePermissions || sitePermissionsAvailable);
+                AddOption(group, definition, optionTop, enabled);
+                optionTop += 30;
+            }
 
             _idleMessage = profileAvailable ? Strings.DeleteBrowsingDataWarning : Strings.ProfileDataUnavailable;
             _idleMessageColor = profileAvailable ? SystemColors.ControlText : SystemColors.GrayText;
@@ -112,23 +112,22 @@ namespace IndianaExpedition.BrowsingData
 
         private void AddOption(
             Control parent,
-            BrowsingDataSelection selection,
-            string text,
+            BrowsingDataOptionDefinition definition,
             int top,
             bool enabled)
         {
             var checkBox = new CheckBox
             {
-                Name = UiAutomationIds.BrowsingData.Option(selection),
-                Text = text,
+                Name = UiAutomationIds.BrowsingData.Option(definition.Selection),
+                Text = definition.GetText(),
                 Location = new Point(20, top),
                 Size = new Size(440, 24),
-                Checked = BrowsingDataSelection.SafeDefaults.HasFlag(selection) && enabled,
+                Checked = definition.SelectedByDefault && enabled,
                 Enabled = enabled
             };
             checkBox.CheckedChanged += (sender, args) => UpdateDeleteButton();
-            _items[selection] = checkBox;
-            _availability[selection] = enabled;
+            _items[definition.Selection] = checkBox;
+            _availability[definition.Selection] = enabled;
             parent.Controls.Add(checkBox);
         }
 

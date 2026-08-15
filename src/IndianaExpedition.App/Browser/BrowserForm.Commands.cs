@@ -14,6 +14,7 @@ using IndianaExpedition.Dialogs;
 using IndianaExpedition.Favorites;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Settings;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.Browser
 {
@@ -64,9 +65,21 @@ namespace IndianaExpedition.Browser
                 return;
             }
 
-            if (!_addressBox.Items.Contains(target))
+            if (_recentAddresses.Remember(target))
             {
-                _addressBox.Items.Insert(0, target);
+                _addressBox.BeginUpdate();
+                try
+                {
+                    _addressBox.Items.Clear();
+                    foreach (var address in _recentAddresses.Items)
+                    {
+                        _addressBox.Items.Add(address);
+                    }
+                }
+                finally
+                {
+                    _addressBox.EndUpdate();
+                }
             }
             CoreWebView.Navigate(target);
         }
@@ -80,7 +93,7 @@ namespace IndianaExpedition.Browser
                 MessageBoxIcon.Question);
             if (answer == DialogResult.Yes)
             {
-                Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+                _externalLauncher.Open(target);
             }
         }
 
@@ -192,7 +205,7 @@ namespace IndianaExpedition.Browser
             }
 
             var failures = new List<string>();
-            if (selection.HasFlag(BrowsingDataSelection.SitePermissions) &&
+            if ((selection & BrowsingDataSelection.SitePermissions) != 0 &&
                 _sitePermissionController != null)
             {
                 try
@@ -205,7 +218,8 @@ namespace IndianaExpedition.Browser
                 }
             }
 
-            failures.AddRange(_applicationBrowsingDataCleaner.Clear(selection));
+            failures.AddRange(
+                await _applicationBrowsingDataCleaner.ClearAsync(selection).ConfigureAwait(true));
 
             if (failures.Count > 0)
             {
@@ -233,71 +247,32 @@ namespace IndianaExpedition.Browser
 
         private void ShowAboutDialog()
         {
-            using (var dialog = new AboutDialog())
+            using (var dialog = new AboutDialog(externalLauncher: _externalLauncher))
             {
                 dialog.ShowDialog(this);
             }
         }
 
-        private void ExecuteEditCommand(EditCommand command)
+        private Task ExecuteEditCommandAsync(EditCommand command)
         {
             if (_addressBox.ContainsFocus)
             {
-                var edit = _addressBox;
-                switch (command)
-                {
-                    case EditCommand.Cut:
-                        if (edit.SelectionLength > 0)
-                        {
-                            Clipboard.SetText(edit.SelectedText);
-                            edit.SelectedText = string.Empty;
-                        }
-                        break;
-                    case EditCommand.Copy:
-                        if (edit.SelectionLength > 0)
-                        {
-                            Clipboard.SetText(edit.SelectedText);
-                        }
-                        break;
-                    case EditCommand.Paste:
-                        if (Clipboard.ContainsText())
-                        {
-                            edit.SelectedText = Clipboard.GetText();
-                        }
-                        break;
-                    case EditCommand.SelectAll:
-                        edit.SelectAll();
-                        break;
-                }
-                return;
+                EditCommandCatalog.ExecuteAddressBar(
+                    command,
+                    _addressBox,
+                    _clipboardService);
+                return Task.CompletedTask;
             }
 
             if (CoreWebView == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            string commandName;
-            switch (command)
-            {
-                case EditCommand.Cut:
-                    commandName = BrowserScriptConstants.CutCommand;
-                    break;
-                case EditCommand.Copy:
-                    commandName = BrowserScriptConstants.CopyCommand;
-                    break;
-                case EditCommand.Paste:
-                    commandName = BrowserScriptConstants.PasteCommand;
-                    break;
-                default:
-                    commandName = BrowserScriptConstants.SelectAllCommand;
-                    break;
-            }
-
-            _ = CoreWebView.ExecuteScriptAsync(string.Format(
+            return CoreWebView.ExecuteScriptAsync(string.Format(
                 CultureInfo.InvariantCulture,
                 BrowserScriptConstants.ExecuteCommandTemplate,
-                commandName));
+                EditCommandCatalog.GetScriptName(command)));
         }
     }
 }

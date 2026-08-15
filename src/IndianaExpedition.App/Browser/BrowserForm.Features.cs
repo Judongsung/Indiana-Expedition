@@ -45,22 +45,14 @@ namespace IndianaExpedition.Browser
             }
         }
 
-        private async void RepeatPageFind(bool previous)
+        private async Task RepeatPageFindAsync(bool previous)
         {
             if (_pageFindController == null || string.IsNullOrWhiteSpace(_lastFindCriteria.Term))
             {
                 ShowPageFindDialog();
                 return;
             }
-
-            try
-            {
-                await _pageFindController.RepeatAsync(previous).ConfigureAwait(true);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, Branding.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            await _pageFindController.RepeatAsync(previous).ConfigureAwait(true);
         }
 
         private void PrintPage()
@@ -88,13 +80,14 @@ namespace IndianaExpedition.Browser
 
         private void StepZoomLevel(int direction)
         {
-            var level = BrowserZoomPolicy.Step(_services.Settings.Current.DefaultZoomLevel, direction);
+            var level = BrowserZoomCatalog.Step(_services.Settings.Current.DefaultZoomLevel, direction);
             SetZoomLevel(level);
         }
 
         private void ApplyZoomSetting(BrowserZoomLevel level)
         {
-            var normalizedLevel = BrowserZoomPolicy.Normalize(level);
+            var definition = BrowserZoomCatalog.Get(level);
+            var normalizedLevel = definition.Level;
             foreach (var item in _zoomMenuItems)
             {
                 item.Value.Checked = item.Key == normalizedLevel;
@@ -105,7 +98,7 @@ namespace IndianaExpedition.Browser
                 _zoomLabel.Text = string.Format(
                     CultureInfo.CurrentCulture,
                     Strings.ZoomStatusFormat,
-                    BrowserZoomConstants.GetPercentage(normalizedLevel));
+                    definition.Percentage);
             }
 
             if (_webView?.CoreWebView2 == null)
@@ -113,84 +106,12 @@ namespace IndianaExpedition.Browser
                 return;
             }
 
-            var factor = BrowserZoomConstants.GetFactor(normalizedLevel);
-            if (Math.Abs(_webView.ZoomFactor - factor) > BrowserZoomConstants.FactorComparisonTolerance)
+            var factor = definition.Factor;
+            if (Math.Abs(_webView.ZoomFactor - factor) > BrowserZoomCatalog.FactorComparisonTolerance)
             {
                 _webView.ZoomFactor = factor;
             }
         }
 
-        private static ManagedBrowserCommand ResolveManagedBrowserShortcut(Keys keyData)
-        {
-            switch (keyData)
-            {
-                case Keys.Control | Keys.F:
-                    return ManagedBrowserCommand.Find;
-                case Keys.F3:
-                    return ManagedBrowserCommand.FindNext;
-                case Keys.Shift | Keys.F3:
-                    return ManagedBrowserCommand.FindPrevious;
-                case Keys.Control | Keys.P:
-                    return ManagedBrowserCommand.Print;
-                case Keys.Control | Keys.J:
-                    return ManagedBrowserCommand.Downloads;
-                case Keys.Control | Keys.Add:
-                case Keys.Control | Keys.Oemplus:
-                case Keys.Control | Keys.Shift | Keys.Oemplus:
-                    return ManagedBrowserCommand.ZoomIn;
-                case Keys.Control | Keys.Subtract:
-                case Keys.Control | Keys.OemMinus:
-                    return ManagedBrowserCommand.ZoomOut;
-                case Keys.Control | Keys.D0:
-                case Keys.Control | Keys.NumPad0:
-                    return ManagedBrowserCommand.ZoomReset;
-                default:
-                    return ManagedBrowserCommand.None;
-            }
-        }
-
-        private void ExecuteManagedBrowserCommand(ManagedBrowserCommand command)
-        {
-            switch (command)
-            {
-                case ManagedBrowserCommand.Find:
-                    ShowPageFindDialog();
-                    break;
-                case ManagedBrowserCommand.FindNext:
-                    RepeatPageFind(previous: false);
-                    break;
-                case ManagedBrowserCommand.FindPrevious:
-                    RepeatPageFind(previous: true);
-                    break;
-                case ManagedBrowserCommand.Print:
-                    PrintPage();
-                    break;
-                case ManagedBrowserCommand.Downloads:
-                    _application.Downloads.ShowHistory(this);
-                    break;
-                case ManagedBrowserCommand.ZoomIn:
-                    StepZoomLevel(1);
-                    break;
-                case ManagedBrowserCommand.ZoomOut:
-                    StepZoomLevel(-1);
-                    break;
-                case ManagedBrowserCommand.ZoomReset:
-                    SetZoomLevel(BrowserZoomLevel.Medium);
-                    break;
-            }
-        }
-
-        private enum ManagedBrowserCommand
-        {
-            None,
-            Find,
-            FindNext,
-            FindPrevious,
-            Print,
-            Downloads,
-            ZoomIn,
-            ZoomOut,
-            ZoomReset
-        }
     }
 }

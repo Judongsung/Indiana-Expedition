@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Linq;
 using Microsoft.Web.WebView2.Core;
+using IndianaExpedition.Resources;
 
 namespace IndianaExpedition.BrowsingData
 {
@@ -20,36 +21,81 @@ namespace IndianaExpedition.BrowsingData
         SafeDefaults = History | DownloadHistory | DiskCache | Cookies | SiteStorage
     }
 
+    internal sealed class BrowsingDataOptionDefinition
+    {
+        internal BrowsingDataOptionDefinition(
+            BrowsingDataSelection selection,
+            Func<string> getText,
+            bool selectedByDefault,
+            bool requiresProfile,
+            bool requiresSitePermissions,
+            CoreWebView2BrowsingDataKinds webViewKinds)
+        {
+            Selection = selection;
+            GetText = getText;
+            SelectedByDefault = selectedByDefault;
+            RequiresProfile = requiresProfile;
+            RequiresSitePermissions = requiresSitePermissions;
+            WebViewKinds = webViewKinds;
+        }
+
+        internal BrowsingDataSelection Selection { get; }
+        internal Func<string> GetText { get; }
+        internal bool SelectedByDefault { get; }
+        internal bool RequiresProfile { get; }
+        internal bool RequiresSitePermissions { get; }
+        internal CoreWebView2BrowsingDataKinds WebViewKinds { get; }
+    }
+
+    internal static class BrowsingDataCatalog
+    {
+        internal static readonly IReadOnlyList<BrowsingDataOptionDefinition> Definitions =
+            new[]
+            {
+                Define(
+                    BrowsingDataSelection.History,
+                    () => Strings.BrowsingHistoryItem,
+                    true,
+                    webViewKinds: CoreWebView2BrowsingDataKinds.BrowsingHistory),
+                Define(
+                    BrowsingDataSelection.DownloadHistory,
+                    () => Strings.DownloadHistoryItem,
+                    true,
+                    webViewKinds: CoreWebView2BrowsingDataKinds.DownloadHistory),
+                Define(BrowsingDataSelection.DiskCache, () => Strings.DiskCacheItem, true, true, CoreWebView2BrowsingDataKinds.DiskCache),
+                Define(BrowsingDataSelection.Cookies, () => Strings.CookiesItem, true, true, CoreWebView2BrowsingDataKinds.Cookies),
+                Define(BrowsingDataSelection.SiteStorage, () => Strings.SiteStorageItem, true, true, CoreWebView2BrowsingDataKinds.AllDomStorage | CoreWebView2BrowsingDataKinds.ServiceWorkers),
+                Define(BrowsingDataSelection.Autofill, () => Strings.AutofillItem, false, true, CoreWebView2BrowsingDataKinds.GeneralAutofill),
+                Define(BrowsingDataSelection.Passwords, () => Strings.SavedPasswordsItem, false, true, CoreWebView2BrowsingDataKinds.PasswordAutosave),
+                new BrowsingDataOptionDefinition(BrowsingDataSelection.SitePermissions, () => Strings.SitePermissionsItem, false, false, true, 0)
+            };
+
+        private static BrowsingDataOptionDefinition Define(
+            BrowsingDataSelection selection,
+            Func<string> getText,
+            bool selectedByDefault,
+            bool requiresProfile = false,
+            CoreWebView2BrowsingDataKinds webViewKinds = 0)
+        {
+            return new BrowsingDataOptionDefinition(
+                selection,
+                getText,
+                selectedByDefault,
+                requiresProfile,
+                false,
+                webViewKinds);
+        }
+    }
+
     internal static class BrowsingDataMapper
     {
-        private static readonly IReadOnlyDictionary<BrowsingDataSelection, CoreWebView2BrowsingDataKinds>
-            WebViewKindsBySelection =
-                new ReadOnlyDictionary<BrowsingDataSelection, CoreWebView2BrowsingDataKinds>(
-                    new Dictionary<BrowsingDataSelection, CoreWebView2BrowsingDataKinds>
-                    {
-                        [BrowsingDataSelection.History] = CoreWebView2BrowsingDataKinds.BrowsingHistory,
-                        [BrowsingDataSelection.DownloadHistory] = CoreWebView2BrowsingDataKinds.DownloadHistory,
-                        [BrowsingDataSelection.DiskCache] = CoreWebView2BrowsingDataKinds.DiskCache,
-                        [BrowsingDataSelection.Cookies] = CoreWebView2BrowsingDataKinds.Cookies,
-                        [BrowsingDataSelection.SiteStorage] = CoreWebView2BrowsingDataKinds.AllDomStorage |
-                                                              CoreWebView2BrowsingDataKinds.ServiceWorkers,
-                        [BrowsingDataSelection.Autofill] = CoreWebView2BrowsingDataKinds.GeneralAutofill,
-                        [BrowsingDataSelection.Passwords] = CoreWebView2BrowsingDataKinds.PasswordAutosave
-                    });
-
         internal static CoreWebView2BrowsingDataKinds ToWebViewKinds(BrowsingDataSelection selection)
         {
-            var kinds = (CoreWebView2BrowsingDataKinds)0;
-
-            foreach (var mapping in WebViewKindsBySelection)
-            {
-                if ((selection & mapping.Key) == mapping.Key)
-                {
-                    kinds |= mapping.Value;
-                }
-            }
-
-            return kinds;
+            return BrowsingDataCatalog.Definitions
+                .Where(definition => (selection & definition.Selection) != 0)
+                .Aggregate(
+                    (CoreWebView2BrowsingDataKinds)0,
+                    (kinds, definition) => kinds | definition.WebViewKinds);
         }
     }
 }

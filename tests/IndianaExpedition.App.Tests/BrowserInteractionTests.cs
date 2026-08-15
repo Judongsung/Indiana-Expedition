@@ -112,7 +112,7 @@ namespace IndianaExpedition.App.Tests
                     settings.AllowedPopupOrigins.Count(
                         origin => string.Equals(
                             origin,
-                            VisualTestConstants.PopupSourceOrigin,
+                            TestVisualConstants.PopupSourceOrigin,
                             StringComparison.OrdinalIgnoreCase)),
                     "팝업 출처가 허용 목록에 정확히 한 번 저장되지 않았습니다.");
                 TestAssert.False(informationBar.Visible, "허용한 출처의 보류 팝업이 정보 표시줄에 남았습니다.");

@@ -1,10 +1,8 @@
 using System;
 using System.Globalization;
-using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using IndianaExpedition.Constants;
-using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Navigation;
 using IndianaExpedition.Popups;
 using IndianaExpedition.Resources;
@@ -39,93 +37,51 @@ namespace IndianaExpedition.Browser
             {
                 // Older compatible runtimes may not expose frame information.
             }
-
             return CoreWebView?.Source;
         }
 
         private void EnqueueBlockedPopup(string sourceOrigin, string targetUri)
         {
-            while (_blockedPopups.Count >= PopupUiConstants.MaximumPendingPopups)
-            {
-                _blockedPopups.Dequeue();
-            }
-
-            _blockedPopups.Enqueue(new BlockedPopupRequest(sourceOrigin, targetUri));
-            RefreshPopupInformationBar();
+            _popupBlockerPresenter.Enqueue(sourceOrigin, targetUri);
             _statusLabel.Text = Strings.PopupBlockedStatus;
         }
 
         private void OpenOldestBlockedPopup()
         {
-            while (_blockedPopups.Count > 0)
-            {
-                var request = _blockedPopups.Dequeue();
-                if (IsOpenablePopupTarget(request.TargetUri))
-                {
-                    _application.OpenWindow(request.TargetUri);
-                    break;
-                }
-            }
-
-            RefreshPopupInformationBar();
+            _popupBlockerPresenter.OpenOldest();
         }
 
         private void AllowOldestPopupOrigin()
         {
-            var origin = _blockedPopups
-                .Select(request => request.SourceOrigin)
-                .FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate));
-            if (string.IsNullOrWhiteSpace(origin))
+            if (_popupBlockerPresenter.TryAllowOldestOrigin(out var maximumOrigins))
             {
                 return;
             }
-
-            var allowedOrigins = _services.Settings.Current.AllowedPopupOrigins;
-            if (!allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase) &&
-                allowedOrigins.Count >= PopupPolicyConstants.MaximumAllowedOrigins)
-            {
-                MessageBox.Show(
-                    string.Format(
-                        CultureInfo.CurrentCulture,
-                        Strings.PopupOriginLimitFormat,
-                        PopupPolicyConstants.MaximumAllowedOrigins),
-                    Branding.ProductName,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-                return;
-            }
-
-            _services.Settings.Update(settings =>
-            {
-                settings.AllowedPopupOrigins.Add(origin);
-            });
-
-            var remaining = _blockedPopups
-                .Where(request => !string.Equals(request.SourceOrigin, origin, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-            _blockedPopups.Clear();
-            foreach (var request in remaining)
-            {
-                _blockedPopups.Enqueue(request);
-            }
-
-            RefreshPopupInformationBar();
+            MessageBox.Show(
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    Strings.PopupOriginLimitFormat,
+                    maximumOrigins),
+                Branding.ProductName,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
 
         private void DismissBlockedPopups()
         {
-            _blockedPopups.Clear();
-            RefreshPopupInformationBar();
+            _popupBlockerPresenter.Dismiss();
         }
 
-        private void RefreshPopupInformationBar()
+        private void OnPopupBlockerStateChanged(
+            object sender,
+            PopupBlockerStateChangedEventArgs state)
         {
-            var visible = _blockedPopups.Count > 0;
+            var visible = state.Count > 0;
             _informationBarLabel.Text = visible
-                ? string.Format(CultureInfo.CurrentCulture, Strings.PopupBlockedFormat, _blockedPopups.Count)
+                ? string.Format(CultureInfo.CurrentCulture, Strings.PopupBlockedFormat, state.Count)
                 : string.Empty;
-            _openBlockedPopupButton.Enabled = _blockedPopups.Any(request => IsOpenablePopupTarget(request.TargetUri));
-            _allowPopupOriginButton.Enabled = _blockedPopups.Any(request => !string.IsNullOrWhiteSpace(request.SourceOrigin));
+            _openBlockedPopupButton.Enabled = state.CanOpen;
+            _allowPopupOriginButton.Enabled = state.CanAllowOrigin;
             SetInformationBarVisible(visible);
         }
 
@@ -138,41 +94,12 @@ namespace IndianaExpedition.Browser
                 : 0f;
         }
 
-        private void OnPopupBlockerEnabledClicked(object sender, EventArgs args)
-        {
-            var enabled = _popupBlockerEnabledMenuItem.Checked;
-            _services.Settings.Update(settings => settings.PopupBlockerEnabled = enabled);
-            if (!enabled)
-            {
-                DismissBlockedPopups();
-            }
-        }
-
         private void ShowPopupBlockerSettingsDialog()
         {
             using (var dialog = new PopupBlockerSettingsDialog(_services.Settings))
             {
                 dialog.ShowDialog(this);
             }
-        }
-
-        private static bool IsOpenablePopupTarget(string value)
-        {
-            return Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
-                   (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
-        }
-
-        private sealed class BlockedPopupRequest
-        {
-            internal BlockedPopupRequest(string sourceOrigin, string targetUri)
-            {
-                SourceOrigin = sourceOrigin;
-                TargetUri = targetUri;
-            }
-
-            internal string SourceOrigin { get; }
-
-            internal string TargetUri { get; }
         }
     }
 }

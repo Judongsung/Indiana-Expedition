@@ -21,7 +21,12 @@ namespace IndianaExpedition.App.Tests
             new TestCase("우클릭 메뉴 deferral 순서", ContextMenuInteractionTests.DeferralBeforeCommand),
             new TestCase("우클릭 메뉴 취소와 중복 Dispose", ContextMenuInteractionTests.CancelAndDuplicateDispose),
             new TestCase("우클릭 메뉴 폐기 소유자 처리", ContextMenuInteractionTests.DisposedOwnerDropsCommand),
-            new TestCase("우클릭 메뉴 비활성 항목 처리", ContextMenuInteractionTests.DisabledItemDoesNotExecute)
+            new TestCase("우클릭 메뉴 비활성 항목 처리", ContextMenuInteractionTests.DisabledItemDoesNotExecute),
+            new TestCase("최근 주소 100개 정책", ArchitectureInteractionTests.RecentAddressLimit),
+            new TestCase("공통 브라우저 명령 라우팅", ArchitectureInteractionTests.CommandCatalogRouting),
+            new TestCase("방문 기록 증분 presenter", ArchitectureInteractionTests.HistoryIncrementalPresenter),
+            new TestCase("즐겨찾기 presenter", ArchitectureInteractionTests.FavoritesPresenter),
+            new TestCase("GDI USER 자원 soak", ArchitectureInteractionTests.GdiUserSoak)
         };
 
         [STAThread]
@@ -114,7 +119,7 @@ namespace IndianaExpedition.App.Tests
                         }
                         catch (Exception exception)
                         {
-                            failures.Add(testCase.Name + ": " + exception.Message);
+                            failures.Add(testCase.Name + ": " + exception);
                         }
                     }
                 }

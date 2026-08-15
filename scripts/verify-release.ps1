@@ -10,9 +10,18 @@ $verifyScript = Join-Path $PSScriptRoot "verify.ps1"
 $verifyVersionScript = Join-Path $PSScriptRoot "verify-version.ps1"
 $visualTestScript = Join-Path $PSScriptRoot "test-visual.ps1"
 $packageScript = Join-Path $PSScriptRoot "package-release.ps1"
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+$smokeTestPath = Join-Path `
+    $repositoryRoot `
+    "tests\IndianaExpedition.WebViewSmokeTests\bin\x64\Release\net48\IndianaExpedition.WebViewSmokeTests.exe"
 $versionResult = & $verifyVersionScript -ExpectedVersion $Version
 
 & $verifyScript
+
+& $smokeTestPath
+if ($LASTEXITCODE -ne 0) {
+    throw "로컬 WebView2 smoke 테스트에 실패했습니다."
+}
 
 $visualResults = @(& $visualTestScript -Configuration Release -SkipBuild)
 if ($visualResults.Count -ne 14) {
@@ -20,12 +29,13 @@ if ($visualResults.Count -ne 14) {
 }
 foreach ($result in $visualResults) {
     if (-not [string]::Equals($result.CaptureMode, "wgc", [StringComparison]::OrdinalIgnoreCase) -or
-        $result.ForegroundUntouched -ne $true) {
+        $result.ForegroundUntouched -ne $true -or
+        $result.BaselinePassed -ne $true) {
         throw "WGC 릴리스 게이트를 통과하지 못했습니다: $($result.State)"
     }
 }
 $visualResults |
-    Select-Object State, CaptureMode, ForegroundUntouched, Width, Height |
+    Select-Object State, CaptureMode, ForegroundUntouched, BaselinePassed, ChangedPixelRatio, MeanAbsoluteRgbError, Width, Height |
     Format-Table |
     Out-Host
 

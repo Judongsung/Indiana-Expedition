@@ -54,6 +54,12 @@ try {
             throw "Release ZIP에 필수 파일이 없습니다: $requiredFile"
         }
     }
+    $unexpectedFiles = @($entryNames | Where-Object {
+        $releaseLayout.RequiredFiles -notcontains $_
+    })
+    if ($unexpectedFiles.Count -gt 0) {
+        throw "Release ZIP에 명시되지 않은 파일이 포함되었습니다: $($unexpectedFiles -join ', ')"
+    }
 } finally {
     $archive.Dispose()
 }

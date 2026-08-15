@@ -10,12 +10,17 @@ namespace IndianaExpedition.Core.Services
     public sealed class FavoritesService
     {
         private readonly object _gate = new object();
-        private readonly AtomicJsonFileStore<FavoritesDocument> _store;
+        private readonly IDocumentStore<FavoritesDocument> _store;
         private FavoritesDocument _document;
 
         public FavoritesService(string path)
+            : this(new AtomicJsonFileStore<FavoritesDocument>(path, FavoritesDocument.CreateDefault))
         {
-            _store = new AtomicJsonFileStore<FavoritesDocument>(path, FavoritesDocument.CreateDefault);
+        }
+
+        internal FavoritesService(IDocumentStore<FavoritesDocument> store)
+        {
+            _store = store ?? throw new ArgumentNullException(nameof(store));
             _document = Normalize(_store.Load());
         }
 
@@ -34,56 +39,45 @@ namespace IndianaExpedition.Core.Services
 
         public FavoriteNode AddFolder(Guid? parentFolderId, string title)
         {
-            var folder = FavoriteNode.CreateFolder(NormalizeTitle(title));
-            AddNode(parentFolderId, folder);
-            return folder.DeepClone();
+            return AddNode(parentFolderId, FavoriteNode.CreateFolder(NormalizeTitle(title)));
         }
 
         public FavoriteNode AddLink(Guid? parentFolderId, string title, string url)
         {
-            var normalizedUrl = NormalizeUrl(url);
-            var link = FavoriteNode.CreateLink(NormalizeTitle(title), normalizedUrl);
-            AddNode(parentFolderId, link);
-            return link.DeepClone();
+            return AddNode(
+                parentFolderId,
+                FavoriteNode.CreateLink(NormalizeTitle(title), NormalizeUrl(url)));
         }
 
         public void Rename(Guid id, string title)
         {
-            lock (_gate)
+            Commit(candidate =>
             {
-                var node = FindNode(_document.Items, id);
+                var node = FindNode(candidate.Items, id);
                 if (node == null)
                 {
                     throw new InvalidOperationException(CoreMessages.FavoriteNotFound);
                 }
-
                 node.Title = NormalizeTitle(title);
-                SaveLocked();
-            }
-
-            Changed?.Invoke(this, EventArgs.Empty);
+            });
         }
 
         public void Delete(Guid id)
         {
-            lock (_gate)
+            Commit(candidate =>
             {
-                if (!TryDetach(_document.Items, id, out _))
+                if (!TryDetach(candidate.Items, id, out _))
                 {
                     throw new InvalidOperationException(CoreMessages.FavoriteNotFound);
                 }
-
-                SaveLocked();
-            }
-
-            Changed?.Invoke(this, EventArgs.Empty);
+            });
         }
 
         public void Move(Guid id, Guid? destinationFolderId)
         {
-            lock (_gate)
+            Commit(candidate =>
             {
-                var node = FindNode(_document.Items, id);
+                var node = FindNode(candidate.Items, id);
                 if (node == null)
                 {
                     throw new InvalidOperationException(CoreMessages.FavoriteNotFound);
@@ -92,29 +86,23 @@ namespace IndianaExpedition.Core.Services
                 FavoriteNode destination = null;
                 if (destinationFolderId.HasValue)
                 {
-                    destination = FindNode(_document.Items, destinationFolderId.Value);
+                    destination = FindNode(candidate.Items, destinationFolderId.Value);
                     if (destination == null || destination.Kind != FavoriteNodeKind.Folder)
                     {
                         throw new InvalidOperationException(CoreMessages.DestinationFolderNotFound);
                     }
-
                     if (destination.Id == node.Id || ContainsNode(node, destination.Id))
                     {
                         throw new InvalidOperationException(CoreMessages.CannotMoveFolderIntoDescendant);
                     }
                 }
 
-                if (!TryDetach(_document.Items, id, out var detached))
+                if (!TryDetach(candidate.Items, id, out var detached))
                 {
                     throw new InvalidOperationException(CoreMessages.FavoriteCannotBeMoved);
                 }
-
-                var target = destination == null ? _document.Items : destination.Children;
-                target.Add(detached);
-                SaveLocked();
-            }
-
-            Changed?.Invoke(this, EventArgs.Empty);
+                (destination == null ? candidate.Items : destination.Children).Add(detached);
+            });
         }
 
         public FavoriteNode Find(Guid id)
@@ -125,55 +113,66 @@ namespace IndianaExpedition.Core.Services
             }
         }
 
-        private void AddNode(Guid? parentFolderId, FavoriteNode node)
+        private FavoriteNode AddNode(Guid? parentFolderId, FavoriteNode node)
+        {
+            Commit(candidate =>
+            {
+                if (!parentFolderId.HasValue)
+                {
+                    candidate.Items.Add(node);
+                    return;
+                }
+
+                var parent = FindNode(candidate.Items, parentFolderId.Value);
+                if (parent == null || parent.Kind != FavoriteNodeKind.Folder)
+                {
+                    throw new InvalidOperationException(CoreMessages.FavoriteFolderNotFound);
+                }
+                parent.Children.Add(node);
+            });
+            return node.DeepClone();
+        }
+
+        private void Commit(Action<FavoritesDocument> update)
         {
             lock (_gate)
             {
-                if (parentFolderId.HasValue)
-                {
-                    var parent = FindNode(_document.Items, parentFolderId.Value);
-                    if (parent == null || parent.Kind != FavoriteNodeKind.Folder)
-                    {
-                        throw new InvalidOperationException(CoreMessages.FavoriteFolderNotFound);
-                    }
-
-                    parent.Children.Add(node);
-                }
-                else
-                {
-                    _document.Items.Add(node);
-                }
-
-                SaveLocked();
+                var candidate = _document.DeepClone();
+                update(candidate);
+                candidate = Normalize(candidate);
+                _store.Save(candidate);
+                _document = candidate;
             }
-
             Changed?.Invoke(this, EventArgs.Empty);
-        }
-
-        private void SaveLocked()
-        {
-            _store.Save(_document);
         }
 
         private static FavoritesDocument Normalize(FavoritesDocument document)
         {
-            var result = document ?? FavoritesDocument.CreateDefault();
+            var result = document?.DeepClone() ?? FavoritesDocument.CreateDefault();
             result.SchemaVersion = BrowserDefaults.DataSchemaVersion;
             result.Items = result.Items ?? new List<FavoriteNode>();
             NormalizeNodes(result.Items);
             return result;
         }
 
-        private static void NormalizeNodes(IEnumerable<FavoriteNode> nodes)
+        private static void NormalizeNodes(List<FavoriteNode> nodes)
         {
-            foreach (var node in nodes)
+            nodes.RemoveAll(node => node == null);
+            var stack = new Stack<FavoriteNode>();
+            for (var index = nodes.Count - 1; index >= 0; index--)
             {
+                stack.Push(nodes[index]);
+            }
+            while (stack.Count > 0)
+            {
+                var node = stack.Pop();
                 if (node.Id == Guid.Empty)
                 {
                     node.Id = Guid.NewGuid();
                 }
-
-                node.Title = string.IsNullOrWhiteSpace(node.Title) ? CoreMessages.UntitledFavorite : node.Title.Trim();
+                node.Title = string.IsNullOrWhiteSpace(node.Title)
+                    ? CoreMessages.UntitledFavorite
+                    : node.Title.Trim();
                 node.Children = node.Children ?? new List<FavoriteNode>();
                 if (node.Kind == FavoriteNodeKind.Link)
                 {
@@ -182,27 +181,35 @@ namespace IndianaExpedition.Core.Services
                 else
                 {
                     node.Url = null;
-                    NormalizeNodes(node.Children);
+                    node.Children.RemoveAll(child => child == null);
+                    for (var index = node.Children.Count - 1; index >= 0; index--)
+                    {
+                        stack.Push(node.Children[index]);
+                    }
                 }
             }
         }
 
         private static FavoriteNode FindNode(IEnumerable<FavoriteNode> nodes, Guid id)
         {
-            foreach (var node in nodes)
+            var stack = new Stack<FavoriteNode>(
+                (nodes ?? Enumerable.Empty<FavoriteNode>()).Where(node => node != null).Reverse());
+            while (stack.Count > 0)
             {
+                var node = stack.Pop();
                 if (node.Id == id)
                 {
                     return node;
                 }
-
-                var child = FindNode(node.Children ?? Enumerable.Empty<FavoriteNode>(), id);
-                if (child != null)
+                var children = node.Children ?? new List<FavoriteNode>();
+                for (var index = children.Count - 1; index >= 0; index--)
                 {
-                    return child;
+                    if (children[index] != null)
+                    {
+                        stack.Push(children[index]);
+                    }
                 }
             }
-
             return null;
         }
 
@@ -213,22 +220,28 @@ namespace IndianaExpedition.Core.Services
 
         private static bool TryDetach(List<FavoriteNode> nodes, Guid id, out FavoriteNode detached)
         {
-            for (var index = 0; index < nodes.Count; index++)
+            var stack = new Stack<List<FavoriteNode>>();
+            stack.Push(nodes);
+            while (stack.Count > 0)
             {
-                if (nodes[index].Id == id)
+                var current = stack.Pop();
+                for (var index = 0; index < current.Count; index++)
                 {
-                    detached = nodes[index];
-                    nodes.RemoveAt(index);
-                    return true;
+                    if (current[index].Id == id)
+                    {
+                        detached = current[index];
+                        current.RemoveAt(index);
+                        return true;
+                    }
                 }
-
-                var children = nodes[index].Children;
-                if (children != null && TryDetach(children, id, out detached))
+                for (var index = current.Count - 1; index >= 0; index--)
                 {
-                    return true;
+                    if (current[index].Children != null && current[index].Children.Count > 0)
+                    {
+                        stack.Push(current[index].Children);
+                    }
                 }
             }
-
             detached = null;
             return false;
         }
@@ -240,7 +253,6 @@ namespace IndianaExpedition.Core.Services
             {
                 throw new ArgumentException(CoreMessages.FavoriteNameRequired, nameof(title));
             }
-
             return value;
         }
 
@@ -251,14 +263,12 @@ namespace IndianaExpedition.Core.Services
             {
                 throw new ArgumentException(CoreMessages.InvalidFavoriteUrl, nameof(url));
             }
-
             if (uri.Scheme != Uri.UriSchemeHttp &&
                 uri.Scheme != Uri.UriSchemeHttps &&
                 uri.Scheme != Uri.UriSchemeFile)
             {
                 throw new ArgumentException(CoreMessages.UnsupportedFavoriteUrl, nameof(url));
             }
-
             return uri.AbsoluteUri;
         }
     }

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
@@ -13,6 +14,7 @@ using IndianaExpedition.Core.Navigation;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 using IndianaExpedition.ContextMenus;
+using IndianaExpedition.WebView;
 
 namespace IndianaExpedition.Browser
 {
@@ -23,21 +25,10 @@ namespace IndianaExpedition.Browser
         private async Task InitializeBrowserAsync()
         {
             _browserReady = false;
-            var candidate = new WebView2
-            {
-                Dock = DockStyle.Fill,
-                BackColor = Color.White,
-                DefaultBackgroundColor = Color.White
-            };
-            _webView = candidate;
-            _browserHost.Controls.Clear();
-            _browserHost.Controls.Add(candidate);
-
             try
             {
-                var environment = await _application.EnvironmentTask.ConfigureAwait(true);
-                await candidate.EnsureCoreWebView2Async(environment).ConfigureAwait(true);
-                ConfigureCoreWebView(candidate.CoreWebView2);
+                var candidate = await _webViewHostController.CreateAsync().ConfigureAwait(true);
+                _webView = candidate;
                 AttachWebViewFeatures(candidate);
                 _browserReady = true;
 
@@ -47,35 +38,28 @@ namespace IndianaExpedition.Browser
             }
             catch
             {
-                DetachWebViewFeatures(candidate);
-                candidate.Dispose();
-                if (ReferenceEquals(_webView, candidate))
-                {
-                    _webView = null;
-                }
+                DetachWebViewFeatures(_webView);
+                _webView = null;
                 throw;
             }
         }
 
-        private void ConfigureCoreWebView(CoreWebView2 core)
+        private WebViewEventBindings CreateWebViewEventBindings()
         {
-            core.Settings.AreDevToolsEnabled = false;
-            core.Settings.AreDefaultContextMenusEnabled = true;
-            core.Settings.AreBrowserAcceleratorKeysEnabled = false;
-            core.Settings.IsStatusBarEnabled = false;
-            core.Settings.IsZoomControlEnabled = false;
-
-            core.NavigationStarting += OnNavigationStarting;
-            core.NavigationCompleted += OnNavigationCompleted;
-            core.SourceChanged += OnSourceChanged;
-            core.DocumentTitleChanged += OnDocumentTitleChanged;
-            core.HistoryChanged += OnWebHistoryChanged;
-            core.StatusBarTextChanged += OnStatusBarTextChanged;
-            core.NewWindowRequested += OnNewWindowRequested;
-            core.DownloadStarting += OnDownloadStarting;
-            core.ProcessFailed += OnProcessFailed;
-            core.PermissionRequested += OnPermissionRequested;
-            core.ContextMenuRequested += OnContextMenuRequested;
+            return new WebViewEventBindings
+            {
+                NavigationStarting = OnNavigationStarting,
+                NavigationCompleted = OnNavigationCompleted,
+                SourceChanged = OnSourceChanged,
+                DocumentTitleChanged = OnDocumentTitleChanged,
+                HistoryChanged = OnWebHistoryChanged,
+                StatusBarTextChanged = OnStatusBarTextChanged,
+                NewWindowRequested = OnNewWindowRequested,
+                DownloadStarting = OnDownloadStarting,
+                ProcessFailed = OnProcessFailed,
+                PermissionRequested = OnPermissionRequested,
+                ContextMenuRequested = OnContextMenuRequested
+            };
         }
 
         private void OnNavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs args)
@@ -184,6 +168,20 @@ namespace IndianaExpedition.Browser
             _statusLabel.Text = status;
         }
 
+        internal void ShowPersistenceWriteFailure()
+        {
+            if (IsDisposed || Disposing)
+            {
+                return;
+            }
+            if (InvokeRequired)
+            {
+                BeginInvoke((Action)ShowPersistenceWriteFailure);
+                return;
+            }
+            _statusLabel.Text = Strings.PersistenceWriteFailedStatus;
+        }
+
         private async void OnProcessFailed(object sender, CoreWebView2ProcessFailedEventArgs args)
         {
             if (_recovering || IsDisposed)
@@ -203,8 +201,7 @@ namespace IndianaExpedition.Browser
                 if (old != null)
                 {
                     DetachWebViewFeatures(old);
-                    _browserHost.Controls.Remove(old);
-                    old.Dispose();
+                    _webViewHostController.ReleaseCurrent();
                 }
 
                 await EnsureBrowserReadyAsync().ConfigureAwait(true);
@@ -226,22 +223,18 @@ namespace IndianaExpedition.Browser
 
         private void OnContextMenuRequested(object sender, CoreWebView2ContextMenuRequestedEventArgs args)
         {
-            var target = args.ContextMenuTarget;
-            var model = new PageContextMenuModel(
-                target?.HasLinkUri == true ? target.LinkUri : null,
-                target?.HasSelection == true ? target.SelectionText : null);
-            var menu = CreatePageContextMenu(model);
-            var deferral = args.GetDeferral();
+            var request = WebViewContextMenuRequestSnapshot.Create(args);
+            var menu = CreatePageContextMenu(request.Model);
             args.Handled = true;
             var session = new WebViewContextMenuSession(
                 menu,
-                new CoreWebViewContextMenuDeferral(deferral),
+                request.Deferral,
                 WinFormsUiCommandDispatcher.Instance,
                 _webView);
             try
             {
                 ReplaceContextMenuSession(session);
-                session.Show(args.Location);
+                session.Show(request.Location);
             }
             catch
             {
@@ -252,7 +245,11 @@ namespace IndianaExpedition.Browser
 
         private void ShowBrowserInitializationError(Exception exception)
         {
-            _browserHost.Controls.Clear();
+            foreach (Control child in _browserHost.Controls.Cast<Control>().ToArray())
+            {
+                _browserHost.Controls.Remove(child);
+                child.Dispose();
+            }
             var panel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -272,10 +269,12 @@ namespace IndianaExpedition.Browser
                 WrapContents = false,
                 Anchor = AnchorStyles.None
             };
+            var headingFont = new Font(Font.FontFamily, 14f, FontStyle.Bold);
+            panel.Disposed += (sender, args) => headingFont.Dispose();
             body.Controls.Add(new Label
             {
                 AutoSize = true,
-                Font = new Font(Font.FontFamily, 14f, FontStyle.Bold),
+                Font = headingFont,
                 Text = Strings.BrowserStartFailed
             });
             body.Controls.Add(new Label

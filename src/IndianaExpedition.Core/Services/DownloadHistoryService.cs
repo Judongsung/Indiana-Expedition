@@ -11,23 +11,27 @@ namespace IndianaExpedition.Core.Services
     public sealed class DownloadHistoryService
     {
         private readonly object _gate = new object();
-        private readonly AtomicJsonFileStore<DownloadHistoryDocument> _store;
+        private readonly IDocumentStore<DownloadHistoryDocument> _store;
         private readonly int _maximumEntries;
         private DownloadHistoryDocument _document;
 
-        public DownloadHistoryService(
-            string path,
+        public DownloadHistoryService(string path, int maximumEntries = DownloadHistoryPolicy.MaximumEntries)
+            : this(
+                new AtomicJsonFileStore<DownloadHistoryDocument>(path, DownloadHistoryDocument.CreateDefault),
+                maximumEntries)
+        {
+        }
+
+        internal DownloadHistoryService(
+            IDocumentStore<DownloadHistoryDocument> store,
             int maximumEntries = DownloadHistoryPolicy.MaximumEntries)
         {
             if (maximumEntries <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(maximumEntries));
             }
-
+            _store = store ?? throw new ArgumentNullException(nameof(store));
             _maximumEntries = maximumEntries;
-            _store = new AtomicJsonFileStore<DownloadHistoryDocument>(
-                path,
-                DownloadHistoryDocument.CreateDefault);
             _document = Normalize(_store.Load());
         }
 
@@ -47,19 +51,15 @@ namespace IndianaExpedition.Core.Services
         public DownloadRecord Add(DownloadRecord record)
         {
             var normalized = NormalizeRecord(record);
-            lock (_gate)
+            Commit(candidate =>
             {
-                _document.Items.RemoveAll(item =>
-                    string.Equals(item.Id, normalized.Id, StringComparison.Ordinal));
-                _document.Items.Insert(0, normalized);
-                _document.Items = _document.Items
+                candidate.Items.RemoveAll(item => string.Equals(item.Id, normalized.Id, StringComparison.Ordinal));
+                candidate.Items.Add(normalized.Clone());
+                candidate.Items = candidate.Items
                     .OrderByDescending(item => item.FinishedAtUtc)
                     .Take(_maximumEntries)
                     .ToList();
-                _store.Save(_document);
-            }
-
-            Changed?.Invoke(this, EventArgs.Empty);
+            });
             return normalized.Clone();
         }
 
@@ -70,17 +70,17 @@ namespace IndianaExpedition.Core.Services
                 return false;
             }
 
-            bool removed;
+            var removed = false;
             lock (_gate)
             {
-                removed = _document.Items.RemoveAll(item =>
-                    string.Equals(item.Id, id, StringComparison.Ordinal)) > 0;
+                var candidate = _document.DeepClone();
+                removed = candidate.Items.RemoveAll(item => string.Equals(item.Id, id, StringComparison.Ordinal)) > 0;
                 if (removed)
                 {
-                    _store.Save(_document);
+                    _store.Save(candidate);
+                    _document = candidate;
                 }
             }
-
             if (removed)
             {
                 Changed?.Invoke(this, EventArgs.Empty);
@@ -90,18 +90,25 @@ namespace IndianaExpedition.Core.Services
 
         public void Clear()
         {
+            Commit(candidate => candidate.Items.Clear());
+        }
+
+        private void Commit(Action<DownloadHistoryDocument> update)
+        {
             lock (_gate)
             {
-                _document.Items.Clear();
-                _store.Save(_document);
+                var candidate = _document.DeepClone();
+                update(candidate);
+                candidate = Normalize(candidate);
+                _store.Save(candidate);
+                _document = candidate;
             }
-
             Changed?.Invoke(this, EventArgs.Empty);
         }
 
         private DownloadHistoryDocument Normalize(DownloadHistoryDocument document)
         {
-            var result = document ?? DownloadHistoryDocument.CreateDefault();
+            var result = document?.DeepClone() ?? DownloadHistoryDocument.CreateDefault();
             result.SchemaVersion = BrowserDefaults.DataSchemaVersion;
             result.Items = (result.Items ?? new List<DownloadRecord>())
                 .Where(item => item != null && !string.IsNullOrWhiteSpace(item.FilePath))
@@ -124,23 +131,14 @@ namespace IndianaExpedition.Core.Services
             }
 
             var filePath = Path.GetFullPath(record.FilePath);
-            var finishedAtUtc = NormalizeUtc(
-                record.FinishedAtUtc == default(DateTime)
-                    ? DateTime.UtcNow
-                    : record.FinishedAtUtc);
-            var startedAtUtc = NormalizeUtc(
-                record.StartedAtUtc == default(DateTime)
-                    ? finishedAtUtc
-                    : record.StartedAtUtc);
-
+            var finishedAtUtc = NormalizeUtc(record.FinishedAtUtc == default(DateTime) ? DateTime.UtcNow : record.FinishedAtUtc);
+            var startedAtUtc = NormalizeUtc(record.StartedAtUtc == default(DateTime) ? finishedAtUtc : record.StartedAtUtc);
             return new DownloadRecord
             {
                 Id = string.IsNullOrWhiteSpace(record.Id)
                     ? Guid.NewGuid().ToString(StorageConstants.CompactIdentifierFormat)
                     : record.Id.Trim(),
-                FileName = string.IsNullOrWhiteSpace(record.FileName)
-                    ? Path.GetFileName(filePath)
-                    : record.FileName.Trim(),
+                FileName = string.IsNullOrWhiteSpace(record.FileName) ? Path.GetFileName(filePath) : record.FileName.Trim(),
                 FilePath = filePath,
                 StartedAtUtc = startedAtUtc,
                 FinishedAtUtc = finishedAtUtc,

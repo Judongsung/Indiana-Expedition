@@ -3,22 +3,6 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Debug",
 
-    [ValidateSet(
-        "Main",
-        "Favorites",
-        "History",
-        "PopupBlocked",
-        "FindDialog",
-        "DeleteBrowsingDataDialog",
-        "DownloadProgressDialog",
-        "DownloadCompletedDialog",
-        "DownloadHistoryDialog",
-        "PermissionRequestDialog",
-        "PrivacyTab",
-        "ContextMenu",
-        "HelpMenu",
-        "AboutDialog"
-    )]
     [string]$State = "Main",
 
     [string]$OutputPath,
@@ -51,7 +35,7 @@ public static class VisualTestWindowState
 '@
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$projectPath = Join-Path $repositoryRoot "src\IndianaExpedition.App\IndianaExpedition.App.csproj"
+$projectPath = Join-Path $repositoryRoot "tests\IndianaExpedition.VisualTestHost\IndianaExpedition.VisualTestHost.csproj"
 $captureToolConfiguration = "Release"
 $visualTestReadyFileArgument = "--visual-test-ready-file"
 $windowPollMilliseconds = 100
@@ -97,7 +81,7 @@ if (-not $SkipBuild) {
 
 $applicationPath = Join-Path `
     $repositoryRoot `
-    "src\IndianaExpedition.App\bin\x64\$Configuration\net48\IndianaExpedition.exe"
+    "tests\IndianaExpedition.VisualTestHost\bin\x64\$Configuration\net48\IndianaExpedition.VisualTestHost.exe"
 if (-not (Test-Path -LiteralPath $applicationPath)) {
     throw "캡처할 실행 파일이 없습니다: $applicationPath"
 }
@@ -106,7 +90,6 @@ if (-not (Test-Path -LiteralPath $captureToolPath)) {
 }
 
 $arguments = @(
-    "--visual-test",
     "--visual-state", $State,
     "--visual-test-data-directory", $profileDirectory,
     $visualTestReadyFileArgument, $readyFilePath
@@ -132,6 +115,7 @@ try {
     $process = Start-Process `
         -FilePath $applicationPath `
         -ArgumentList $arguments `
+        -WindowStyle Hidden `
         -PassThru
 
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)

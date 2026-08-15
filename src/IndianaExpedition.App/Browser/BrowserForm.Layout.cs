@@ -8,6 +8,7 @@ using IndianaExpedition.Core.Constants;
 using IndianaExpedition.Core.Models;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.Browser
 {
@@ -67,26 +68,26 @@ namespace IndianaExpedition.Browser
             };
 
             var file = new ToolStripMenuItem(Strings.MenuFile);
-            file.DropDownItems.Add(CreateMenuItem(Strings.NewWindow, (s, e) => _application.OpenWindow(), Keys.Control | Keys.N));
-            file.DropDownItems.Add(CreateMenuItem(Strings.Open, (s, e) => ShowOpenLocationDialog(), Keys.Control | Keys.O));
+            file.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.NewWindow));
+            file.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.OpenLocation));
             file.DropDownItems.Add(new ToolStripSeparator());
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.SaveAs));
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.PageSetup));
-            file.DropDownItems.Add(CreateMenuItem(Strings.Print, (s, e) => PrintPage(), Keys.Control | Keys.P));
+            file.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Print));
             file.DropDownItems.Add(new ToolStripSeparator());
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.ImportExport));
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.Properties));
             file.DropDownItems.Add(CreateDisabledMenuItem(Strings.WorkOffline));
             file.DropDownItems.Add(new ToolStripSeparator());
-            file.DropDownItems.Add(CreateMenuItem(Strings.Close, (s, e) => Close(), Keys.Alt | Keys.F4));
+            file.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.CloseWindow));
 
             var edit = new ToolStripMenuItem(Strings.MenuEdit);
-            edit.DropDownItems.Add(CreateMenuItem(Strings.Cut, (s, e) => ExecuteEditCommand(EditCommand.Cut), Keys.Control | Keys.X));
-            edit.DropDownItems.Add(CreateMenuItem(Strings.Copy, (s, e) => ExecuteEditCommand(EditCommand.Copy), Keys.Control | Keys.C));
-            edit.DropDownItems.Add(CreateMenuItem(Strings.Paste, (s, e) => ExecuteEditCommand(EditCommand.Paste), Keys.Control | Keys.V));
+            edit.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Cut));
+            edit.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Copy));
+            edit.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Paste));
             edit.DropDownItems.Add(new ToolStripSeparator());
-            edit.DropDownItems.Add(CreateMenuItem(Strings.SelectAll, (s, e) => ExecuteEditCommand(EditCommand.SelectAll), Keys.Control | Keys.A));
-            edit.DropDownItems.Add(CreateMenuItem(Strings.Find, (s, e) => ShowPageFindDialog(), Keys.Control | Keys.F));
+            edit.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.SelectAll));
+            edit.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Find));
 
             var view = new ToolStripMenuItem(Strings.MenuView);
             var toolbars = new ToolStripMenuItem(Strings.Toolbars);
@@ -102,59 +103,52 @@ namespace IndianaExpedition.Browser
             view.DropDownItems.Add(_statusBarMenuItem);
 
             var explorer = new ToolStripMenuItem(Strings.ExplorerBar);
-            explorer.DropDownItems.Add(CreateMenuItem(Strings.MenuFavorites, (s, e) => ShowFavoritesSidebar(), Keys.Control | Keys.I));
-            explorer.DropDownItems.Add(CreateMenuItem(Strings.HistoryTitle, (s, e) => ShowHistorySidebar(), Keys.Control | Keys.H));
+            explorer.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.FavoritesSidebar));
+            explorer.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.HistorySidebar));
             view.DropDownItems.Add(explorer);
 
             var goTo = new ToolStripMenuItem(Strings.GoTo);
-            goTo.DropDownItems.Add(CreateMenuItem(Strings.Back, (s, e) => GoBack(), Keys.Alt | Keys.Left));
-            goTo.DropDownItems.Add(CreateMenuItem(Strings.Forward, (s, e) => GoForward(), Keys.Alt | Keys.Right));
-            goTo.DropDownItems.Add(CreateMenuItem(Strings.Home, (s, e) => GoHome(), Keys.Alt | Keys.Home));
+            goTo.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Back));
+            goTo.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Forward));
+            goTo.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Home));
             view.DropDownItems.Add(goTo);
-            view.DropDownItems.Add(CreateMenuItem(Strings.Stop, (s, e) => StopNavigation(), Keys.Escape));
-            view.DropDownItems.Add(CreateMenuItem(Strings.Refresh, (s, e) => RefreshPage(), Keys.F5));
+            view.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Stop));
+            view.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Refresh));
             view.DropDownItems.Add(new ToolStripSeparator());
             var textSize = new ToolStripMenuItem(Strings.TextSize);
-            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeLargest, BrowserZoomLevel.Largest));
-            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeLarger, BrowserZoomLevel.Larger));
-            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeMedium, BrowserZoomLevel.Medium));
-            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeSmaller, BrowserZoomLevel.Smaller));
-            textSize.DropDownItems.Add(CreateZoomMenuItem(Strings.TextSizeSmallest, BrowserZoomLevel.Smallest));
+            foreach (var definition in BrowserZoomCatalog.Ordered.Reverse())
+            {
+                textSize.DropDownItems.Add(
+                    CreateZoomMenuItem(definition.GetText(), definition.Level));
+            }
             view.DropDownItems.Add(textSize);
             view.DropDownItems.Add(CreateDisabledMenuItem(Strings.Encoding));
             view.DropDownItems.Add(CreateDisabledMenuItem(Strings.Source));
             view.DropDownItems.Add(new ToolStripSeparator());
-            view.DropDownItems.Add(CreateMenuItem(Strings.FullScreen, (s, e) => ToggleFullScreen(), Keys.F11));
+            view.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.FullScreen));
 
             _favoritesMenu = new ToolStripMenuItem(Strings.MenuFavorites)
             {
                 Name = UiAutomationIds.Browser.FavoritesMenu
             };
-            _favoritesMenu.DropDownItems.Add(CreateMenuItem(Strings.AddFavorite, (s, e) => AddCurrentFavorite(), Keys.Control | Keys.D));
-            _favoritesMenu.DropDownItems.Add(CreateMenuItem(Strings.OrganizeFavorites, (s, e) => ShowOrganizeFavoritesDialog()));
+            _favoritesMenu.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.AddFavorite));
+            _favoritesMenu.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.OrganizeFavorites));
             _favoritesMenu.DropDownItems.Add(new ToolStripSeparator());
 
             var tools = new ToolStripMenuItem(Strings.MenuTools);
-            tools.DropDownItems.Add(CreateMenuItem(
-                Strings.ViewDownloads,
-                (s, e) => _application.Downloads.ShowHistory(this),
-                Keys.Control | Keys.J));
+            tools.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.Downloads));
             tools.DropDownItems.Add(new ToolStripSeparator());
-            tools.DropDownItems.Add(CreateMenuItem(Strings.DeleteHistory, (s, e) => ShowDeleteBrowsingDataDialog()));
+            tools.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.DeleteBrowsingData));
             tools.DropDownItems.Add(new ToolStripSeparator());
             var popupBlocker = new ToolStripMenuItem(Strings.PopupBlocker);
-            _popupBlockerEnabledMenuItem = new ToolStripMenuItem(Strings.PopupBlockerEnabled)
-            {
-                CheckOnClick = true
-            };
-            _popupBlockerEnabledMenuItem.Click += OnPopupBlockerEnabledClicked;
+            _popupBlockerEnabledMenuItem = CreateCommandMenuItem(BrowserCommandId.PopupToggle);
             popupBlocker.DropDownItems.Add(_popupBlockerEnabledMenuItem);
-            popupBlocker.DropDownItems.Add(CreateMenuItem(Strings.PopupBlockerSettings, (s, e) => ShowPopupBlockerSettingsDialog()));
+            popupBlocker.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.PopupSettings));
             tools.DropDownItems.Add(popupBlocker);
             tools.DropDownItems.Add(CreateDisabledMenuItem(Strings.ManageAddons));
             tools.DropDownItems.Add(CreateDisabledMenuItem(Strings.WindowsUpdate));
             tools.DropDownItems.Add(new ToolStripSeparator());
-            tools.DropDownItems.Add(CreateMenuItem(Strings.InternetOptions, (s, e) => ShowInternetOptionsDialog()));
+            tools.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.InternetOptions));
 
             _helpMenu = new ToolStripMenuItem(Strings.MenuHelp)
             {
@@ -163,9 +157,10 @@ namespace IndianaExpedition.Browser
             _helpMenu.DropDownItems.Add(CreateDisabledMenuItem(Strings.Contents));
             _helpMenu.DropDownItems.Add(CreateDisabledMenuItem(Strings.OnlineSupport));
             _helpMenu.DropDownItems.Add(new ToolStripSeparator());
-            _helpMenu.DropDownItems.Add(CreateMenuItem(Strings.About, (s, e) => ShowAboutDialog()));
+            _helpMenu.DropDownItems.Add(CreateCommandMenuItem(BrowserCommandId.About));
 
             menu.Items.AddRange(new ToolStripItem[] { file, edit, view, _favoritesMenu, tools, _helpMenu });
+            menu.MenuActivate += (sender, args) => RefreshCommandStates();
             return menu;
         }
 
@@ -183,13 +178,13 @@ namespace IndianaExpedition.Browser
                 Padding = new Padding(3, 1, 3, 1)
             };
 
-            _backButton = CreateToolbarButton(Strings.ToolbarBack, GlyphKind.Back, (s, e) => GoBack(), showText: true);
-            _forwardButton = CreateToolbarButton(Strings.ToolbarForward, GlyphKind.Forward, (s, e) => GoForward(), showText: true);
-            _stopButton = CreateToolbarButton(Strings.ToolbarStop, GlyphKind.Stop, (s, e) => StopNavigation());
-            _refreshButton = CreateToolbarButton(Strings.ToolbarRefresh, GlyphKind.Refresh, (s, e) => RefreshPage());
-            _homeButton = CreateToolbarButton(Strings.ToolbarHome, GlyphKind.Home, (s, e) => GoHome());
-            var favoritesButton = CreateToolbarButton(Strings.ToolbarFavorites, GlyphKind.Favorites, (s, e) => ToggleExplorerSidebar(ExplorerMode.Favorites), showText: true);
-            var historyButton = CreateToolbarButton(Strings.ToolbarHistory, GlyphKind.History, (s, e) => ToggleExplorerSidebar(ExplorerMode.History), showText: true);
+            _backButton = CreateToolbarButton(BrowserCommandId.Back, Strings.ToolbarBack, GlyphKind.Back, showText: true);
+            _forwardButton = CreateToolbarButton(BrowserCommandId.Forward, Strings.ToolbarForward, GlyphKind.Forward, showText: true);
+            _stopButton = CreateToolbarButton(BrowserCommandId.Stop, Strings.ToolbarStop, GlyphKind.Stop);
+            _refreshButton = CreateToolbarButton(BrowserCommandId.Refresh, Strings.ToolbarRefresh, GlyphKind.Refresh);
+            _homeButton = CreateToolbarButton(BrowserCommandId.Home, Strings.ToolbarHome, GlyphKind.Home);
+            var favoritesButton = CreateToolbarButton(BrowserCommandId.FavoritesSidebar, Strings.ToolbarFavorites, GlyphKind.Favorites, showText: true);
+            var historyButton = CreateToolbarButton(BrowserCommandId.HistorySidebar, Strings.ToolbarHistory, GlyphKind.History, showText: true);
             favoritesButton.Name = UiAutomationIds.Browser.FavoritesSidebarButton;
             historyButton.Name = UiAutomationIds.Browser.HistorySidebarButton;
             _explorerButtons[ExplorerMode.Favorites] = favoritesButton;
@@ -282,7 +277,8 @@ namespace IndianaExpedition.Browser
                 Padding = new Padding(3, 0, 3, 0)
             };
 
-            toolStrip.Items.Add(new ToolStripLabel(Strings.Links) { Font = new Font(Font, FontStyle.Bold) });
+            _linksLabelFont = new Font(Font, FontStyle.Bold);
+            toolStrip.Items.Add(new ToolStripLabel(Strings.Links) { Font = _linksLabelFont });
             toolStrip.Items.Add(new ToolStripSeparator());
             toolStrip.Items.Add(CreateLinkButton(Strings.LinkGoogle, BrowserDefaults.HomeUrl));
             toolStrip.Items.Add(CreateLinkButton(Strings.LinkWebView2, ApplicationConstants.WebView2BrowserProjectUrl));
@@ -314,12 +310,13 @@ namespace IndianaExpedition.Browser
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, PopupUiConstants.InformationAllowWidth));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, PopupUiConstants.InformationCloseWidth));
 
+            _informationIconFont = new Font(Font, FontStyle.Bold);
             var icon = new Label
             {
                 Dock = DockStyle.Fill,
                 Text = "!",
                 TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font(Font, FontStyle.Bold),
+                Font = _informationIconFont,
                 ForeColor = XpPalette.InformationBarIconBorder,
                 BackColor = XpPalette.InformationBarIconFace,
                 Margin = new Padding(2)
@@ -381,12 +378,13 @@ namespace IndianaExpedition.Browser
 
             _explorerPanel = new Panel { Dock = DockStyle.Fill, BackColor = XpPalette.ExplorerBody };
             var header = new XpExplorerHeaderPanel { Dock = DockStyle.Top, Height = 28 };
+            _explorerTitleFont = new Font(Font, FontStyle.Bold);
             _explorerTitle = new XpExplorerHeaderLabel
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.Transparent,
                 ForeColor = XpPalette.ExplorerHeaderText,
-                Font = new Font(Font, FontStyle.Bold),
+                Font = _explorerTitleFont,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Padding = new Padding(7, 0, 0, 0)
             };
@@ -403,10 +401,10 @@ namespace IndianaExpedition.Browser
             header.Controls.Add(_explorerTitle);
             header.Controls.Add(_closeExplorerButton);
 
-            var images = new ImageList { ImageSize = new Size(16, 16), ColorDepth = ColorDepth.Depth32Bit };
-            images.Images.Add(XpGlyphs.Create(GlyphKind.Folder, 16));
-            images.Images.Add(XpGlyphs.Create(GlyphKind.Page, 16));
-            images.Images.Add(XpGlyphs.Create(GlyphKind.History, 16));
+            _explorerImages = new ImageList { ImageSize = new Size(16, 16), ColorDepth = ColorDepth.Depth32Bit };
+            _explorerImages.Images.Add(XpGlyphs.Create(GlyphKind.Folder, 16));
+            _explorerImages.Images.Add(XpGlyphs.Create(GlyphKind.Page, 16));
+            _explorerImages.Images.Add(XpGlyphs.Create(GlyphKind.History, 16));
 
             _explorerTree = new TreeView
             {
@@ -414,7 +412,7 @@ namespace IndianaExpedition.Browser
                 BorderStyle = BorderStyle.None,
                 BackColor = XpPalette.ExplorerBody,
                 HideSelection = false,
-                ImageList = images,
+                ImageList = _explorerImages,
                 ShowLines = true,
                 ShowPlusMinus = true
             };
@@ -465,7 +463,11 @@ namespace IndianaExpedition.Browser
             return status;
         }
 
-        private ToolStripButton CreateToolbarButton(string text, GlyphKind glyph, EventHandler handler, bool showText = false)
+        private ToolStripButton CreateToolbarButton(
+            BrowserCommandId command,
+            string text,
+            GlyphKind glyph,
+            bool showText = false)
         {
             var button = new ToolStripButton
             {
@@ -476,7 +478,8 @@ namespace IndianaExpedition.Browser
                 ImageTransparentColor = Color.Magenta,
                 AutoSize = true
             };
-            button.Click += handler;
+            button.Click += (sender, args) => _commandRouter.Execute(command);
+            RegisterCommandItem(command, button);
             return button;
         }
 
@@ -590,12 +593,5 @@ namespace IndianaExpedition.Browser
             }
         }
 
-        private enum EditCommand
-        {
-            Cut,
-            Copy,
-            Paste,
-            SelectAll
-        }
     }
 }

@@ -31,10 +31,9 @@ namespace IndianaExpedition.Favorites
                 Location = new Point(110, 16),
                 Size = new Size(260, 23)
             };
-            _folderBox.Items.Add(new Choice(null, Strings.FavoriteRoot));
-            foreach (var item in favorites.Items)
+            foreach (var choice in FavoriteProjection.BuildFolderChoices(favorites.Items))
             {
-                AddFolders(item, 1);
+                _folderBox.Items.Add(choice);
             }
             _folderBox.SelectedIndex = 0;
 
@@ -45,35 +44,6 @@ namespace IndianaExpedition.Favorites
             CancelButton = cancel;
         }
 
-        internal Guid? SelectedFolderId => ((Choice)_folderBox.SelectedItem).Id;
-
-        private void AddFolders(FavoriteNode node, int depth)
-        {
-            if (node.Kind != FavoriteNodeKind.Folder)
-            {
-                return;
-            }
-
-            _folderBox.Items.Add(new Choice(
-                node.Id,
-                new string(BrowserUiConstants.FolderIndentCharacter, depth) + node.Title));
-            foreach (var child in node.Children ?? new List<FavoriteNode>())
-            {
-                AddFolders(child, depth + 1);
-            }
-        }
-
-        private sealed class Choice
-        {
-            internal Choice(Guid? id, string text)
-            {
-                Id = id;
-                Text = text;
-            }
-
-            internal Guid? Id { get; }
-            private string Text { get; }
-            public override string ToString() => Text;
-        }
+        internal Guid? SelectedFolderId => ((FavoriteFolderChoice)_folderBox.SelectedItem).Id;
     }
 }

@@ -52,7 +52,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "[5/6] 배포 폴더와 버전 검사"
-& $buildReleaseScript -Configuration Release -NoRestore
+& $buildReleaseScript -Configuration Release -NoRestore -StageOnly
 & $verifyVersionScript | Out-Host
 
 Write-Host "[6/6] git diff --check"

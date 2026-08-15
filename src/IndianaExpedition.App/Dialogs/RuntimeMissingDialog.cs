@@ -1,10 +1,10 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Windows.Forms;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.Dialogs
 {
@@ -16,8 +16,14 @@ namespace IndianaExpedition.Dialogs
 
     internal sealed class RuntimeMissingDialog : LunaForm
     {
-        internal RuntimeMissingDialog(RuntimeRequirementState state, string detectedVersion)
+        private readonly IExternalLauncher _externalLauncher;
+
+        internal RuntimeMissingDialog(
+            RuntimeRequirementState state,
+            string detectedVersion,
+            IExternalLauncher externalLauncher = null)
         {
+            _externalLauncher = externalLauncher ?? new ShellExternalLauncher();
             var updateRequired = state == RuntimeRequirementState.UpdateRequired;
             Text = updateRequired ? Strings.RuntimeUpdateTitle : Strings.RuntimeMissingTitle;
             SetContentClientSize(476, 174);
@@ -49,7 +55,8 @@ namespace IndianaExpedition.Dialogs
                 Text = Strings.RuntimeDownload,
                 Location = new Point(24, 96)
             };
-            link.LinkClicked += (sender, args) => OpenDownloadPage();
+            link.LinkClicked += (sender, args) =>
+                _externalLauncher.Open(ApplicationConstants.WebView2DownloadUrl);
 
             var close = new XpButton
             {
@@ -66,9 +73,5 @@ namespace IndianaExpedition.Dialogs
             CancelButton = close;
         }
 
-        private static void OpenDownloadPage()
-        {
-            Process.Start(new ProcessStartInfo(ApplicationConstants.WebView2DownloadUrl) { UseShellExecute = true });
-        }
     }
 }

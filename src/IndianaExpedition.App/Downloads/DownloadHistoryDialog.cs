@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -10,12 +9,14 @@ using IndianaExpedition.Dialogs;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
 using IndianaExpedition.Constants;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.Downloads
 {
     internal sealed class DownloadHistoryDialog : LunaForm
     {
         private readonly IDownloadHistoryController _controller;
+        private readonly IExternalLauncher _externalLauncher;
         private readonly ListView _list;
         private readonly Label _emptyLabel;
         private readonly XpButton _openButton;
@@ -25,9 +26,11 @@ namespace IndianaExpedition.Downloads
 
         internal DownloadHistoryDialog(
             IDownloadHistoryController controller,
-            bool preventActivationOnShow = false)
+            bool preventActivationOnShow = false,
+            IExternalLauncher externalLauncher = null)
         {
             _controller = controller ?? throw new ArgumentNullException(nameof(controller));
+            _externalLauncher = externalLauncher ?? new ShellExternalLauncher();
             PreventActivationOnShow = preventActivationOnShow;
             Text = Strings.DownloadHistoryTitle;
             SetContentClientSize(720, 410);
@@ -227,7 +230,7 @@ namespace IndianaExpedition.Downloads
             }
         }
 
-        private static void OpenPath(string path)
+        private void OpenPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path) ||
                 (!File.Exists(path) && !Directory.Exists(path)))
@@ -237,7 +240,7 @@ namespace IndianaExpedition.Downloads
 
             try
             {
-                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+                _externalLauncher.Open(path);
             }
             catch (Exception ex)
             {

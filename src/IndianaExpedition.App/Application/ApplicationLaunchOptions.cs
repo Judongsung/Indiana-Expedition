@@ -1,121 +1,49 @@
 using System;
-using IndianaExpedition.Constants;
+using IndianaExpedition.VisualTesting;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition
 {
-    internal enum VisualTestState
-    {
-        Main,
-        Favorites,
-        History,
-        PopupBlocked,
-        FindDialog,
-        DeleteBrowsingDataDialog,
-        DownloadProgressDialog,
-        DownloadCompletedDialog,
-        DownloadHistoryDialog,
-        PermissionRequestDialog,
-        PrivacyTab,
-        ContextMenu,
-        HelpMenu,
-        AboutDialog
-    }
-
     internal sealed class ApplicationLaunchOptions
     {
         private ApplicationLaunchOptions(
-            bool isVisualTestMode,
-            VisualTestState visualTestState,
-            string visualTestDataDirectory,
-            string visualTestReadyFile)
+            IVisualTestScenario visualTestScenario,
+            string visualTestReadyFile,
+            IExternalLauncher externalLauncher,
+            IClipboardService clipboardService)
         {
-            IsVisualTestMode = isVisualTestMode;
-            VisualTestState = visualTestState;
-            VisualTestDataDirectory = visualTestDataDirectory;
+            VisualTestScenario = visualTestScenario;
             VisualTestReadyFile = visualTestReadyFile;
+            ExternalLauncher = externalLauncher ?? throw new ArgumentNullException(nameof(externalLauncher));
+            ClipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
         }
 
-        internal bool IsVisualTestMode { get; }
-
-        internal VisualTestState VisualTestState { get; }
-
-        internal string VisualTestDataDirectory { get; }
-
+        internal bool IsVisualTestMode => VisualTestScenario != null;
+        internal IVisualTestScenario VisualTestScenario { get; }
         internal string VisualTestReadyFile { get; }
+        internal IExternalLauncher ExternalLauncher { get; }
+        internal IClipboardService ClipboardService { get; }
 
-        internal static ApplicationLaunchOptions Parse(string[] arguments)
+        internal static ApplicationLaunchOptions CreateProduction()
         {
-            var visualTestMode = false;
-            var visualTestState = VisualTestState.Main;
-            string visualTestDataDirectory = null;
-            string visualTestReadyFile = null;
-
-            for (var index = 0; index < (arguments?.Length ?? 0); index++)
-            {
-                var argument = arguments[index];
-                if (string.Equals(
-                    argument,
-                    ApplicationConstants.VisualTestModeArgument,
-                    StringComparison.OrdinalIgnoreCase))
-                {
-                    visualTestMode = true;
-                    continue;
-                }
-
-                if (TryReadOptionValue(
-                    arguments,
-                    ref index,
-                    ApplicationConstants.VisualTestStateArgument,
-                    out var stateValue) &&
-                    Enum.TryParse(stateValue, ignoreCase: true, result: out VisualTestState parsedState))
-                {
-                    visualTestState = parsedState;
-                    continue;
-                }
-
-                if (TryReadOptionValue(
-                    arguments,
-                    ref index,
-                    ApplicationConstants.VisualTestDataDirectoryArgument,
-                    out var dataDirectory))
-                {
-                    visualTestDataDirectory = dataDirectory;
-                    continue;
-                }
-
-                if (TryReadOptionValue(
-                    arguments,
-                    ref index,
-                    ApplicationConstants.VisualTestReadyFileArgument,
-                    out var readyFile))
-                {
-                    visualTestReadyFile = readyFile;
-                }
-            }
-
             return new ApplicationLaunchOptions(
-                visualTestMode,
-                visualTestState,
-                visualTestDataDirectory,
-                visualTestReadyFile);
+                null,
+                null,
+                new ShellExternalLauncher(),
+                new WindowsClipboardService());
         }
 
-        private static bool TryReadOptionValue(
-            string[] arguments,
-            ref int index,
-            string option,
-            out string value)
+        internal static ApplicationLaunchOptions CreateVisualTest(
+            IVisualTestScenario scenario,
+            IExternalLauncher externalLauncher,
+            IClipboardService clipboardService,
+            string readyFile = null)
         {
-            value = null;
-            if (!string.Equals(arguments[index], option, StringComparison.OrdinalIgnoreCase) ||
-                index + 1 >= arguments.Length ||
-                string.IsNullOrWhiteSpace(arguments[index + 1]))
-            {
-                return false;
-            }
-
-            value = arguments[++index];
-            return true;
+            return new ApplicationLaunchOptions(
+                scenario ?? throw new ArgumentNullException(nameof(scenario)),
+                readyFile,
+                externalLauncher,
+                clipboardService);
         }
     }
 }

@@ -11,9 +11,45 @@ using System.Windows.Forms;
 using IndianaExpedition.Browser;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core;
+using IndianaExpedition.VisualTesting;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.App.Tests
 {
+    internal enum VisualTestState
+    {
+        Main,
+        PopupBlocked
+    }
+
+    internal static class TestVisualConstants
+    {
+        internal const string PopupSourceOrigin = "https://example.com";
+        internal const string PopupTargetUrl = "https://example.com/popup";
+    }
+
+    internal sealed class TestVisualScenario : IVisualTestScenario
+    {
+        private readonly VisualTestState _state;
+
+        internal TestVisualScenario(VisualTestState state)
+        {
+            _state = state;
+        }
+
+        public void Prepare(IVisualTestSurface surface)
+        {
+            surface.Reset();
+            if (_state == VisualTestState.PopupBlocked)
+            {
+                surface.ShowBlockedPopup(
+                    TestVisualConstants.PopupSourceOrigin,
+                    TestVisualConstants.PopupTargetUrl);
+            }
+            surface.Present(surface.ContextMenuOwner.FindForm());
+        }
+    }
+
     internal sealed class TestContext : IDisposable
     {
         private const string TemporaryDirectoryPrefix = "IndianaExpedition.App.Tests";
@@ -69,14 +105,10 @@ namespace IndianaExpedition.App.Tests
         {
             _testContext = testContext ?? throw new ArgumentNullException(nameof(testContext));
             Services = new BrowserApplicationServices(new AppDataPaths(testContext.TemporaryDirectory));
-            var launchOptions = ApplicationLaunchOptions.Parse(new[]
-            {
-                ApplicationConstants.VisualTestModeArgument,
-                ApplicationConstants.VisualTestStateArgument,
-                visualTestState.ToString(),
-                ApplicationConstants.VisualTestDataDirectoryArgument,
-                testContext.TemporaryDirectory
-            });
+            var launchOptions = ApplicationLaunchOptions.CreateVisualTest(
+                new TestVisualScenario(visualTestState),
+                new RejectingExternalLauncher(),
+                new InMemoryClipboardService());
             _applicationContext = new BrowserApplicationContext(Services, launchOptions);
             _testContext.PumpEvents();
             Browser = Application.OpenForms
@@ -100,6 +132,23 @@ namespace IndianaExpedition.App.Tests
             _testContext.PumpEvents();
             _disposed = true;
         }
+    }
+
+    internal sealed class RejectingExternalLauncher : IExternalLauncher
+    {
+        public void Open(string target)
+        {
+            throw new InvalidOperationException("동작 테스트에서 외부 프로세스를 실행할 수 없습니다: " + target);
+        }
+    }
+
+    internal sealed class InMemoryClipboardService : IClipboardService
+    {
+        private string _text;
+
+        public bool ContainsText() => !string.IsNullOrEmpty(_text);
+        public string GetText() => _text ?? string.Empty;
+        public void SetText(string value) => _text = value;
     }
 
     internal sealed class ForegroundWindowGuard : IDisposable

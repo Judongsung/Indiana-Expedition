@@ -11,19 +11,29 @@ namespace IndianaExpedition.Core.Services
     public sealed class SettingsService
     {
         private readonly object _gate = new object();
-        private readonly AtomicJsonFileStore<BrowserSettings> _store;
+        private readonly IDocumentStore<BrowserSettings> _store;
+        private readonly Func<BrowserSettings> _defaultsFactory;
         private BrowserSettings _current;
 
         public SettingsService(string path)
+            : this(
+                new AtomicJsonFileStore<BrowserSettings>(path, BrowserSettings.CreateDefault),
+                BrowserSettings.CreateDefault)
         {
-            _store = new AtomicJsonFileStore<BrowserSettings>(path, BrowserSettings.CreateDefault);
-            var loaded = _store.Load();
-            var saveNormalizedFeatures = RequiresFeatureSettingsSave(loaded);
-            _current = Normalize(loaded);
-            if (saveNormalizedFeatures)
+        }
+
+        internal SettingsService(
+            IDocumentStore<BrowserSettings> store,
+            Func<BrowserSettings> defaultsFactory)
+        {
+            _store = store ?? throw new ArgumentNullException(nameof(store));
+            _defaultsFactory = defaultsFactory ?? throw new ArgumentNullException(nameof(defaultsFactory));
+            var normalized = Normalize(_store.Load(), out var changed);
+            if (changed)
             {
-                _store.Save(_current);
+                _store.Save(normalized);
             }
+            _current = normalized;
         }
 
         public event EventHandler Changed;
@@ -50,17 +60,19 @@ namespace IndianaExpedition.Core.Services
             {
                 var candidate = _current.Clone();
                 update(candidate);
-                _current = Normalize(candidate);
-                _store.Save(_current);
+                candidate = Normalize(candidate, out _);
+                _store.Save(candidate);
+                _current = candidate;
             }
 
             Changed?.Invoke(this, EventArgs.Empty);
         }
 
-        private static BrowserSettings Normalize(BrowserSettings settings)
+        private BrowserSettings Normalize(BrowserSettings settings, out bool changed)
         {
-            var defaults = BrowserSettings.CreateDefault();
-            var result = settings ?? defaults;
+            var defaults = _defaultsFactory();
+            var original = settings?.Clone();
+            var result = settings?.Clone() ?? defaults.Clone();
             var sourceSchemaVersion = result.SchemaVersion;
 
             result.SchemaVersion = BrowserDefaults.DataSchemaVersion;
@@ -107,6 +119,7 @@ namespace IndianaExpedition.Core.Services
                 }
             }
 
+            changed = original == null || !SettingsEqual(original, result);
             return result;
         }
 
@@ -125,20 +138,22 @@ namespace IndianaExpedition.Core.Services
             return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
         }
 
-        private static bool RequiresFeatureSettingsSave(BrowserSettings settings)
+        private static bool SettingsEqual(BrowserSettings left, BrowserSettings right)
         {
-            if (settings == null ||
-                settings.SchemaVersion != BrowserDefaults.DataSchemaVersion ||
-                !Enum.IsDefined(typeof(BrowserZoomLevel), settings.DefaultZoomLevel) ||
-                settings.AllowedPopupOrigins == null)
-            {
-                return true;
-            }
-
-            var normalizedOrigins = PopupPolicy.NormalizeOrigins(settings.AllowedPopupOrigins);
-            return !settings.AllowedPopupOrigins.SequenceEqual(
-                normalizedOrigins,
-                StringComparer.Ordinal);
+            return left.SchemaVersion == right.SchemaVersion &&
+                   string.Equals(left.UiCulture, right.UiCulture, StringComparison.Ordinal) &&
+                   string.Equals(left.HomeUrl, right.HomeUrl, StringComparison.Ordinal) &&
+                   string.Equals(left.SearchUrlTemplate, right.SearchUrlTemplate, StringComparison.Ordinal) &&
+                   left.StartupMode == right.StartupMode &&
+                   string.Equals(left.DownloadDirectory, right.DownloadDirectory, StringComparison.Ordinal) &&
+                   left.ShowLinksBar == right.ShowLinksBar &&
+                   left.ShowStatusBar == right.ShowStatusBar &&
+                   left.PopupBlockerEnabled == right.PopupBlockerEnabled &&
+                   (left.AllowedPopupOrigins ?? new System.Collections.Generic.List<string>()).SequenceEqual(
+                       right.AllowedPopupOrigins ?? new System.Collections.Generic.List<string>(),
+                       StringComparer.Ordinal) &&
+                   left.DefaultZoomLevel == right.DefaultZoomLevel &&
+                   left.AskWhereToSaveDownloads == right.AskWhereToSaveDownloads;
         }
 
         private static bool IsValidSearchTemplate(string value)

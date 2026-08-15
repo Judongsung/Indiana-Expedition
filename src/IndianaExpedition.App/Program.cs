@@ -14,20 +14,17 @@ namespace IndianaExpedition
 {
     internal static class Program
     {
-        private static bool _visualTestMode;
-
         [STAThread]
-        private static void Main(string[] arguments)
+        private static void Main()
         {
-            var launchOptions = ApplicationLaunchOptions.Parse(arguments);
-            _visualTestMode = launchOptions.IsVisualTestMode;
+            var launchOptions = ApplicationLaunchOptions.CreateProduction();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.ThreadException += OnThreadException;
 
             try
             {
-                var paths = CreateAppDataPaths(launchOptions);
+                var paths = AppDataPaths.CreateDefault(ApplicationConstants.DataDirectoryName);
                 var services = new BrowserApplicationServices(paths);
                 ApplyCulture(services.Settings.Current.UiCulture);
                 if (!EnsureWebView2Runtime())
@@ -42,13 +39,6 @@ namespace IndianaExpedition
             }
             catch (Exception ex)
             {
-                if (_visualTestMode)
-                {
-                    Trace.TraceError(ex.ToString());
-                    Environment.ExitCode = 1;
-                    return;
-                }
-
                 MessageBox.Show(
                     ex.Message,
                     Branding.ProductName,
@@ -80,34 +70,11 @@ namespace IndianaExpedition
                 Trace.TraceError(ex.ToString());
             }
 
-            if (_visualTestMode)
-            {
-                Trace.TraceError(
-                    "WebView2 Runtime requirement failed. State={0}, Detected={1}, Minimum={2}",
-                    failureState,
-                    detectedVersion ?? string.Empty,
-                    WebViewRuntimeConstants.MinimumVersion);
-                Environment.ExitCode = 1;
-                return false;
-            }
-
             using (var dialog = new RuntimeMissingDialog(failureState, detectedVersion))
             {
                 dialog.ShowDialog();
             }
             return false;
-        }
-
-        private static AppDataPaths CreateAppDataPaths(ApplicationLaunchOptions launchOptions)
-        {
-            if (!launchOptions.IsVisualTestMode)
-            {
-                return AppDataPaths.CreateDefault(ApplicationConstants.DataDirectoryName);
-            }
-
-            return string.IsNullOrWhiteSpace(launchOptions.VisualTestDataDirectory)
-                ? AppDataPaths.CreateDefault(ApplicationConstants.VisualTestDataDirectoryName)
-                : new AppDataPaths(launchOptions.VisualTestDataDirectory);
         }
 
         private static void ApplyCulture(string cultureName)
@@ -130,14 +97,6 @@ namespace IndianaExpedition
 
         private static void OnThreadException(object sender, ThreadExceptionEventArgs args)
         {
-            if (_visualTestMode)
-            {
-                Trace.TraceError(args.Exception.ToString());
-                Environment.ExitCode = 1;
-                Application.Exit();
-                return;
-            }
-
             MessageBox.Show(
                 args.Exception.Message,
                 Branding.ProductName,

@@ -50,5 +50,18 @@ namespace IndianaExpedition.Core.Models
                 Items = new List<HistoryEntry>()
             };
         }
+
+        internal HistoryDocument DeepClone()
+        {
+            var clone = new HistoryDocument { SchemaVersion = SchemaVersion };
+            foreach (var item in Items ?? new List<HistoryEntry>())
+            {
+                if (item != null)
+                {
+                    clone.Items.Add(item.Clone());
+                }
+            }
+            return clone;
+        }
     }
 }

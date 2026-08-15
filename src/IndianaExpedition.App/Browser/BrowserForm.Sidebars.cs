@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Globalization;
-using System.Linq;
 using System.Windows.Forms;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Core.Models;
 using IndianaExpedition.Resources;
+using IndianaExpedition.Favorites;
 
 namespace IndianaExpedition.Browser
 {
@@ -16,7 +14,7 @@ namespace IndianaExpedition.Browser
         {
             _explorerSidebars[ExplorerMode.Favorites] = new ExplorerSidebarDefinition(
                 () => Strings.FavoritesTitle,
-                PopulateFavoritesTree);
+                () => _favoritesSidebarPresenter.Rebuild());
             _explorerSidebars[ExplorerMode.History] = new ExplorerSidebarDefinition(
                 () => Strings.HistoryTitle,
                 PopulateHistoryTree);
@@ -29,13 +27,13 @@ namespace IndianaExpedition.Browser
                 return;
             }
 
-            if (_explorerMode == mode && !_contentSplit.Panel1Collapsed)
+            var resultingMode = _sidebarController.Toggle(mode, !_contentSplit.Panel1Collapsed);
+            if (resultingMode == ExplorerMode.None)
             {
                 HideExplorerSidebar();
                 return;
             }
-
-            ShowExplorerSidebar(mode, definition);
+            ShowExplorerSidebar(resultingMode, _explorerSidebars[resultingMode]);
         }
 
         private void ShowFavoritesSidebar()
@@ -58,7 +56,7 @@ namespace IndianaExpedition.Browser
 
         private void ShowExplorerSidebar(ExplorerMode mode, ExplorerSidebarDefinition definition)
         {
-            _explorerMode = mode;
+            _sidebarController.Show(mode);
             UpdateExplorerButtonStates();
             _explorerTitle.Text = definition.GetTitle();
             _contentSplit.Panel1Collapsed = false;
@@ -71,7 +69,7 @@ namespace IndianaExpedition.Browser
 
         private void HideExplorerSidebar()
         {
-            _explorerMode = ExplorerMode.None;
+            _sidebarController.Hide();
             UpdateExplorerButtonStates();
             _contentSplit.Panel1Collapsed = true;
             _explorerTree.Nodes.Clear();
@@ -81,95 +79,14 @@ namespace IndianaExpedition.Browser
         {
             foreach (var item in _explorerButtons)
             {
-                item.Value.Checked = item.Key == _explorerMode;
+                item.Value.Checked = _sidebarController.IsSelected(item.Key);
             }
-        }
-
-        private void PopulateFavoritesTree()
-        {
-            _explorerTree.BeginUpdate();
-            try
-            {
-                _explorerTree.Nodes.Clear();
-                foreach (var item in _services.Favorites.Items)
-                {
-                    _explorerTree.Nodes.Add(CreateFavoriteTreeNode(item));
-                }
-            }
-            finally
-            {
-                _explorerTree.EndUpdate();
-            }
-        }
-
-        private static TreeNode CreateFavoriteTreeNode(FavoriteNode item)
-        {
-            var imageIndex = item.Kind == FavoriteNodeKind.Folder
-                ? BrowserUiConstants.FolderImageIndex
-                : BrowserUiConstants.PageImageIndex;
-            var node = new TreeNode(item.Title, imageIndex, imageIndex) { Tag = item };
-            if (item.Kind == FavoriteNodeKind.Folder)
-            {
-                foreach (var child in item.Children ?? new List<FavoriteNode>())
-                {
-                    node.Nodes.Add(CreateFavoriteTreeNode(child));
-                }
-            }
-            return node;
+            RefreshCommandStates();
         }
 
         private void PopulateHistoryTree()
         {
-            var now = DateTime.Now.Date;
-            var groups = _services.History.Items
-                .Select(entry => new { Entry = entry, LocalTime = entry.VisitedAtUtc.ToLocalTime() })
-                .GroupBy(item => item.LocalTime.Date)
-                .OrderByDescending(group => group.Key);
-
-            _explorerTree.BeginUpdate();
-            try
-            {
-                _explorerTree.Nodes.Clear();
-                foreach (var group in groups)
-                {
-                    var title = FormatHistoryDate(group.Key, now);
-                    var dayNode = new TreeNode(
-                        title,
-                        BrowserUiConstants.HistoryImageIndex,
-                        BrowserUiConstants.HistoryImageIndex);
-                    foreach (var item in group.OrderByDescending(value => value.LocalTime))
-                    {
-                        var text = string.Format(
-                            CultureInfo.CurrentCulture,
-                            Strings.HistoryEntryFormat,
-                            item.Entry.Title,
-                            item.LocalTime.ToString(BrowserUiConstants.HistoryTimeFormat, CultureInfo.CurrentCulture));
-                        dayNode.Nodes.Add(new TreeNode(
-                            text,
-                            BrowserUiConstants.PageImageIndex,
-                            BrowserUiConstants.PageImageIndex) { Tag = item.Entry });
-                    }
-                    _explorerTree.Nodes.Add(dayNode);
-                    dayNode.Expand();
-                }
-            }
-            finally
-            {
-                _explorerTree.EndUpdate();
-            }
-        }
-
-        private static string FormatHistoryDate(DateTime date, DateTime today)
-        {
-            if (date == today)
-            {
-                return Strings.HistoryToday;
-            }
-            if (date == today.AddDays(-1))
-            {
-                return Strings.HistoryYesterday;
-            }
-            return date.ToString(BrowserUiConstants.HistoryDateFormat, CultureInfo.CurrentCulture);
+            _historySidebarPresenter.Rebuild();
         }
 
         private void OnExplorerNodeDoubleClick(object sender, TreeNodeMouseClickEventArgs args)
@@ -199,7 +116,7 @@ namespace IndianaExpedition.Browser
                 item.Dispose();
             }
 
-            var favorites = _services.Favorites.Items;
+            var favorites = FavoriteProjection.Build(_services.Favorites.Items);
             if (favorites.Count == 0)
             {
                 _favoritesMenu.DropDownItems.Add(new ToolStripMenuItem(Strings.Empty) { Enabled = false });
@@ -212,35 +129,70 @@ namespace IndianaExpedition.Browser
             }
         }
 
-        private ToolStripMenuItem CreateFavoriteMenuItem(FavoriteNode favorite)
+        private ToolStripMenuItem CreateFavoriteMenuItem(FavoriteProjectionNode favorite)
         {
-            var item = new ToolStripMenuItem(favorite.Title)
+            var root = CreateFavoriteMenuItemShell(favorite);
+            var stack = new Stack<FavoriteMenuBuildItem>();
+            AddFavoriteMenuChildren(stack, root, favorite);
+            while (stack.Count > 0)
             {
-                Image = favorite.Kind == FavoriteNodeKind.Folder
+                var current = stack.Pop();
+                var item = CreateFavoriteMenuItemShell(current.Projection);
+                current.Parent.DropDownItems.Add(item);
+                AddFavoriteMenuChildren(stack, item, current.Projection);
+            }
+            return root;
+        }
+
+        private ToolStripMenuItem CreateFavoriteMenuItemShell(FavoriteProjectionNode favorite)
+        {
+            var item = new ToolStripMenuItem(favorite.Source.Title)
+            {
+                Image = favorite.Source.Kind == FavoriteNodeKind.Folder
                     ? Styling.XpGlyphs.Create(Styling.GlyphKind.Folder, 16)
                     : Styling.XpGlyphs.Create(Styling.GlyphKind.Page, 16),
-                Tag = favorite
+                Tag = favorite.Source
             };
 
-            if (favorite.Kind == FavoriteNodeKind.Folder)
+            if (favorite.Source.Kind == FavoriteNodeKind.Folder)
             {
-                foreach (var child in favorite.Children ?? new List<FavoriteNode>())
-                {
-                    item.DropDownItems.Add(CreateFavoriteMenuItem(child));
-                }
-
-                if (item.DropDownItems.Count == 0)
+                if (favorite.Children.Count == 0)
                 {
                     item.DropDownItems.Add(new ToolStripMenuItem(Strings.Empty) { Enabled = false });
                 }
             }
             else
             {
-                item.ToolTipText = favorite.Url;
-                item.Click += (sender, args) => NavigateTo(favorite.Url, allowExplicitFileUri: true);
+                item.ToolTipText = favorite.Source.Url;
+                item.Click += (sender, args) => NavigateTo(favorite.Source.Url, allowExplicitFileUri: true);
             }
 
             return item;
+        }
+
+        private static void AddFavoriteMenuChildren(
+            Stack<FavoriteMenuBuildItem> stack,
+            ToolStripMenuItem parent,
+            FavoriteProjectionNode projection)
+        {
+            for (var index = projection.Children.Count - 1; index >= 0; index--)
+            {
+                stack.Push(new FavoriteMenuBuildItem(parent, projection.Children[index]));
+            }
+        }
+
+        private sealed class FavoriteMenuBuildItem
+        {
+            internal FavoriteMenuBuildItem(
+                ToolStripMenuItem parent,
+                FavoriteProjectionNode projection)
+            {
+                Parent = parent ?? throw new ArgumentNullException(nameof(parent));
+                Projection = projection ?? throw new ArgumentNullException(nameof(projection));
+            }
+
+            internal ToolStripMenuItem Parent { get; }
+            internal FavoriteProjectionNode Projection { get; }
         }
     }
 }

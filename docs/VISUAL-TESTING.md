@@ -19,7 +19,7 @@ PowerShell에서 다음 명령을 실행한다.
 .\scripts\test-visual.ps1
 ```
 
-최초 상태에서 앱과 WGC 도구를 빌드한 뒤 다음 14개 상태의 PNG와 대응하는 `.capture.json` 파일을 만든다.
+최초 상태에서 별도 `IndianaExpedition.VisualTestHost`와 WGC 도구를 빌드한다. PowerShell은 호스트의 `--list-visual-states --json` 결과를 읽어 다음 14개 상태의 PNG와 대응하는 `.capture.json` 파일을 만든다.
 
 ```text
 artifacts\wgc\
@@ -53,7 +53,7 @@ artifacts\wgc\
 └─ indiana-expedition-aboutdialog.capture.json
 ```
 
-각 결과는 캡처 방식이 `wgc`인지, 대상 창이 포그라운드가 아니었는지, PNG 크기와 표본 색상이 정상인지 자동 검증한다. 앱은 준비 파일에 빈 신호 대신 정확한 대상 HWND를 기록하며, 스크립트는 이 HWND가 실행한 앱 프로세스 소유인지 확인한다. 한 조건이라도 어긋나면 스크립트가 실패한다.
+각 결과는 캡처 방식이 `wgc`인지, 대상 창이 포그라운드가 아니었는지, PNG 크기와 표본 색상이 정상인지 자동 검증한다. 이어서 `tests/VisualBaselines/manifest.json`에 기록된 기준선 SHA-256과 크기를 먼저 검증하고, RGB 채널 차이 12 초과 픽셀 비율 2% 이하, 평균 RGB 절대 오차 2.0 이하를 확인한다. 실패 시 `artifacts/wgc/diff`에 차이 PNG를 만든다. 호스트는 준비 파일에 빈 신호 대신 정확한 대상 HWND를 기록하며, 스크립트는 이 HWND가 실행한 호스트 프로세스 소유인지 확인한다. 한 조건이라도 어긋나면 스크립트가 실패한다.
 시각 기준 창은 선택적인 로컬 참조 이미지 `target.png`와 직접 비교할 수 있도록 800×600으로 고정된다. 권리 관계가 확인된 이미지만 저장소 루트에 이 이름으로 두며, 파일 자체는 `.gitignore`에 의해 공개 저장소와 릴리스에서 제외된다. 일반 실행 창의 기본 크기는 1024×768로 유지된다.
 
 Release 빌드 또는 이미 빌드된 실행 파일을 검사할 때는 다음 옵션을 사용한다.
@@ -82,10 +82,10 @@ Release 빌드 또는 이미 빌드된 실행 파일을 검사할 때는 다음 
 .\scripts\capture-wgc.ps1 -State AboutDialog
 ```
 
-`--visual-test` 모드에서는 외부 네트워크와 WebView2 첫 프레임 시점에 영향을 받지 않도록 웹 콘텐츠 영역을 흰색 결정론적 표면으로 대체한다. 팝업 상태는 메인 창의 노란 정보 표시줄을 노출한다. 대화상자 상태는 WebView2 없이 대표 검색어·다운로드·사이트 권한 데이터를 인터페이스 스텁으로 주입한다. 다운로드 진행과 완료, 최근 기록, 네 가지 선택이 있는 권한 요청, 개인 정보 탭의 권한 목록을 각각 검증한다. 우클릭 메뉴 상태는 브라우저가 사용하는 동일한 메뉴 팩터리와 XP 렌더러를 검증하고, 도움말 메뉴 상태는 열린 최상위 메뉴의 눌림 표시를 검증한다. 따라서 PNG는 Luna 창 프레임, 메뉴, 도구 모음, 주소 표시줄, 사이드바, 정보 표시줄, 모달 및 상태 표시줄의 회귀 검사에 사용한다. 실제 WebView2 탐색과 DOM 동작은 별도의 기능 테스트 대상으로 유지한다.
+VisualTestHost에서는 외부 네트워크와 WebView2 첫 프레임 시점에 영향을 받지 않도록 웹 콘텐츠 영역을 흰색 결정론적 표면으로 대체한다. 팝업 상태는 메인 창의 노란 정보 표시줄을 노출한다. 대화상자 상태는 WebView2 없이 대표 검색어·다운로드·사이트 권한 데이터를 인터페이스 스텁으로 주입한다. 다운로드 진행과 완료, 최근 기록, 네 가지 선택이 있는 권한 요청, 개인 정보 탭의 권한 목록을 각각 검증한다. 우클릭 메뉴 상태는 브라우저가 사용하는 동일한 메뉴 팩터리와 XP 렌더러를 검증하고, 도움말 메뉴 상태는 열린 최상위 메뉴의 눌림 표시를 검증한다. 따라서 PNG는 Luna 창 프레임, 메뉴, 도구 모음, 주소 표시줄, 사이드바, 정보 표시줄, 모달 및 상태 표시줄의 회귀 검사에 사용한다. 실제 WebView2 탐색과 DOM 동작은 로컬 smoke 테스트 대상으로 유지한다.
 
 ## Windows 10 주의 사항
 
 테스트 창에 WinForms의 `ShowInTaskbar = false`를 적용하면 이 환경의 Windows 10 WGC가 창을 캡처 불가능 대상으로 처리했다. 따라서 메인 창과 시각 테스트용 대화상자는 몇 초 동안 작업 표시줄에 표시될 수 있다. 대화상자 상태는 일반 실행의 소유 모달과 달리 테스트에서만 독립 최상위 창으로 만들며, `ShowWithoutActivation`과 `SWP_NOACTIVATE`가 지정된 뒤쪽 Z-order 이동을 함께 적용해 순간적인 포커스 획득과 전면 표시를 막는다.
 
-릴리스 전에는 개별 캡처 대신 `./scripts/verify-release.ps1 -Version 0.3.0`을 사용한다. 이 로컬 게이트는 공통 Release 검증 후 14개 결과 모두가 `CaptureMode=wgc`, `ForegroundUntouched=True`인지 다시 확인하고 배포 ZIP과 체크섬을 생성한다.
+릴리스 전에는 개별 캡처 대신 `./scripts/verify-release.ps1 -Version 0.4.0`을 사용한다. 이 로컬 게이트는 공통 Release 검증과 로컬 HTML 기반 WebView2 smoke를 마친 뒤 14개 결과 모두가 `CaptureMode=wgc`, `ForegroundUntouched=True`, `BaselinePassed=True`인지 확인하고 배포 ZIP과 체크섬을 생성한다.

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
@@ -7,13 +6,21 @@ using Microsoft.Web.WebView2.Core;
 using IndianaExpedition.Constants;
 using IndianaExpedition.Resources;
 using IndianaExpedition.Styling;
+using IndianaExpedition.Commands;
 
 namespace IndianaExpedition.Dialogs
 {
     internal sealed class AboutDialog : LunaForm
     {
-        internal AboutDialog(bool preventActivationOnShow = false)
+        private readonly Image _logoImage;
+        private readonly Font _titleFont;
+        private readonly IExternalLauncher _externalLauncher;
+
+        internal AboutDialog(
+            bool preventActivationOnShow = false,
+            IExternalLauncher externalLauncher = null)
         {
+            _externalLauncher = externalLauncher ?? new ShellExternalLauncher();
             PreventActivationOnShow = preventActivationOnShow;
             Text = string.Format(CultureInfo.CurrentCulture, Strings.AboutTitleFormat, Branding.ProductName);
             SetContentClientSize(500, 286);
@@ -25,17 +32,19 @@ namespace IndianaExpedition.Dialogs
                 ? FormStartPosition.CenterScreen
                 : FormStartPosition.CenterParent;
 
+            _logoImage = XpGlyphs.Create(GlyphKind.Globe, 64);
             var logo = new PictureBox
             {
-                Image = XpGlyphs.Create(GlyphKind.Globe, 64),
+                Image = _logoImage,
                 Location = new Point(24, 24),
                 Size = new Size(64, 64),
                 SizeMode = PictureBoxSizeMode.CenterImage
             };
+            _titleFont = new Font(Font.FontFamily, 18f, FontStyle.Bold);
             var name = new Label
             {
                 Text = Branding.ProductName,
-                Font = new Font(Font.FontFamily, 18f, FontStyle.Bold),
+                Font = _titleFont,
                 AutoSize = true,
                 Location = new Point(108, 24)
             };
@@ -56,7 +65,8 @@ namespace IndianaExpedition.Dialogs
                 AutoSize = true,
                 Location = new Point(24, 206)
             };
-            reference.LinkClicked += (sender, args) => OpenUrl(ApplicationConstants.WebView2BrowserProjectUrl);
+            reference.LinkClicked += (sender, args) =>
+                _externalLauncher.Open(ApplicationConstants.WebView2BrowserProjectUrl);
 
             var repositoryLabel = new Label
             {
@@ -70,7 +80,8 @@ namespace IndianaExpedition.Dialogs
                 AutoSize = true,
                 Location = new Point(128, 180)
             };
-            repository.LinkClicked += (sender, args) => OpenUrl(ApplicationConstants.ProjectRepositoryUrl);
+            repository.LinkClicked += (sender, args) =>
+                _externalLauncher.Open(ApplicationConstants.ProjectRepositoryUrl);
 
             var ok = new XpButton
             {
@@ -93,9 +104,21 @@ namespace IndianaExpedition.Dialogs
             CancelButton = ok;
         }
 
-        private static void OpenUrl(string url)
+        protected override void Dispose(bool disposing)
         {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            if (disposing)
+            {
+                foreach (Control control in ContentPanel.Controls)
+                {
+                    if (control is PictureBox picture)
+                    {
+                        picture.Image = null;
+                    }
+                }
+                _logoImage.Dispose();
+                _titleFont.Dispose();
+            }
+            base.Dispose(disposing);
         }
 
         private static string SafeRuntimeVersion()
